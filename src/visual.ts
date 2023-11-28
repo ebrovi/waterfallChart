@@ -129,7 +129,6 @@ export class Visual implements IVisual {
             }
             heights.push(prevHeight);
         }
-        let countPartSum = this.data.items.filter(d => d.type === 2).length;
     
         connectors.enter().append('line')
             .classed('bar', true)
@@ -139,9 +138,7 @@ export class Visual implements IVisual {
                 i > 0 
                     ? (d.type === 1 
                         ? heights[i - 1] 
-                        : (i > countPartSum 
-                            ? heights[i - countPartSum]
-                            : baseLine)
+                            : baseLine
                     ) 
                     : baseLine
             )
@@ -154,9 +151,7 @@ export class Visual implements IVisual {
                 i > 0 
                     ? (d.type === 1 
                         ? heights[i - 1] 
-                        : (i > countPartSum 
-                            ? heights[i - countPartSum]
-                            : baseLine)
+                            : baseLine
                     ) 
                     : baseLine
             )

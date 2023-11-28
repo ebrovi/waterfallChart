@@ -35,12 +35,11 @@ export function transformData(options: VisualUpdateOptions): VData {
         const items: VDataItem[] = []
         const grouping: VDataItem[] = []
 
-        let cumulative = 0
         for (let i = 0; i < dv.values.length; i++) { //4
             for (let u = 0; u < dv.categories[0].values.length; u++) { //12
                 const value = dv.values[i].values[u]
                 if (typeof value === "number" && !isNaN(value)){
-                    cumulative += <number>value;
+                    total += <number>value;
                     maxValue = Math.max(maxValue, value)
                     minValue = Math.min(minValue, value)
                     items.push({
@@ -50,11 +49,12 @@ export function transformData(options: VisualUpdateOptions): VData {
                     })
                 }
             }
-            total += <number>cumulative
-            console.log("cumulative",cumulative)
+            //total += <number>cumulative
+            //console.log("cumulative",cumulative)
+            console.log("total",total)
             items.push({
                 category: <string>dv.values[i].source.groupName,
-                value: <number>cumulative,
+                value: <number>total,
                 type: <number> 2 // 2 for cumulative
             })
             data = {
