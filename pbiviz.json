@@ -1,0 +1,25 @@
+{
+    "visual": {
+        "name": "waterfallChart",
+        "displayName": "waterfallChart",
+        "guid": "waterfallChartEB4B4595C4364CD4BE27731AD680350C",
+        "visualClassName": "Visual",
+        "version": "1.0.0",
+        "description": "",
+        "supportUrl": "",
+        "gitHubUrl": ""
+    },
+    "apiVersion": "4.7.0",
+    "author": {
+        "name": "Ebba Rovig",
+        "email": "ebba.rovig@affingo.se"
+    },
+    "assets": {
+        "icon": "assets/icon.png"
+    },
+    "externalJS": [],
+    "style": "style/visual.less",
+    "capabilities": "capabilities.json",
+    "dependencies": null,
+    "stringResources": []
+}
