@@ -19,7 +19,7 @@ export interface VData {
 export interface VDataItem {
     category: string,
     value: number,
-    type: number // 1 value, 2 partSum, 3 total
+    type: number // 1 value, 2 cumulative, 3 total
 }
 
 export function transformData(options: VisualUpdateOptions): VData {
@@ -35,13 +35,12 @@ export function transformData(options: VisualUpdateOptions): VData {
         const items: VDataItem[] = []
         const grouping: VDataItem[] = []
 
-
+        let cumulative = 0
         for (let i = 0; i < dv.values.length; i++) { //4
-            let partSum = 0
             for (let u = 0; u < dv.categories[0].values.length; u++) { //12
                 const value = dv.values[i].values[u]
                 if (typeof value === "number" && !isNaN(value)){
-                    partSum += <number>value;
+                    cumulative += <number>value;
                     maxValue = Math.max(maxValue, value)
                     minValue = Math.min(minValue, value)
                     items.push({
@@ -51,11 +50,12 @@ export function transformData(options: VisualUpdateOptions): VData {
                     })
                 }
             }
-            total += <number>partSum
+            total += <number>cumulative
+            console.log("cumulative",cumulative)
             items.push({
                 category: <string>dv.values[i].source.groupName,
-                value: <number>partSum,
-                type: <number> 2 // 2 for partsum
+                value: <number>cumulative,
+                type: <number> 2 // 2 for cumulative
             })
             data = {
                 items,
@@ -66,12 +66,6 @@ export function transformData(options: VisualUpdateOptions): VData {
                 formatString: dv.values[0].source.format || '',
             }
         }
-
-        items.push({
-            category: <string> "Total",
-            value: <number>total,
-            type: <number> 3 // 2 for partsum
-        })
 
     } catch (error) {
         console.error('Error in transformData:', error);
