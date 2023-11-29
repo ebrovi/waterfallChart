@@ -80,12 +80,6 @@
                             }
                         }
                     }
-                },
-                "sumEnabled": {
-                    "displayName": "Total Summary",
-                    "type": {
-                        "bool": true
-                    }
                 }
             }
         }

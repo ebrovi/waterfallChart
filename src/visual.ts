@@ -110,22 +110,22 @@ export class Visual implements IVisual {
         return <VisualSettings>VisualSettings.parse(dataView);
     }
 
+
     private drawAxes(baseline: number) {
-        const xAxis = this.svg.selectAll('line.x-axis').data(this.data.items) //.data binder de till data, men detta används inte just här. finns säkert mycket mer logiska sätt 
-        xAxis.enter().append('line')
-            .classed('x-axis', true)
-            .attr('x1', 0)
-            .attr('y1', baseline)               
-            .attr('x2', this.scaleX.range()[1]) 
-            .attr('y2', baseline)
-        
-        xAxis.transition(this.transition)
+        let xAxisLine = this.svg.select('line.x-axis');
+        if (xAxisLine.empty()) {
+            xAxisLine = this.svg.append('line').classed('x-axis', true);
+        }
+    
+        xAxisLine
             .attr('x1', 0)
             .attr('y1', baseline)
             .attr('x2', this.scaleX.range()[1])
-            .attr('y2', baseline)
-
-        xAxis.exit().remove();
+            .attr('y2', baseline);
+    
+        if (this.transition) {
+            xAxisLine.transition(this.transition);
+        } 
     }
 
     private drawBars(heights: number[]) {
@@ -161,19 +161,20 @@ export class Visual implements IVisual {
     }
 
     private drawConnectors(heights: number[]) {
+        
         const connectors = this.svg.selectAll('line.connectors').data(this.data.items);
 
         const barWidth = 40;
 
         connectors.enter().append('line')
-            .classed('connector', true)
+            .classed('connectors', true)
             .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2)
             .attr('y1', (d, i) => heights[i])
             .attr('x2', (d, i) => 
                             i < (heights.length - 1)
                                 ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
                                 : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => heights[i])
+            .attr('y2', (d, i) => heights[i]);
 
         connectors.transition(this.transition)
             .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2)
@@ -182,7 +183,7 @@ export class Visual implements IVisual {
                             i < (heights.length - 1)
                                 ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
                                 : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => heights[i])
+            .attr('y2', (d, i) => heights[i]);
 
         connectors.exit().remove();
     }
