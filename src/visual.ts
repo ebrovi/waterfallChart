@@ -86,18 +86,31 @@ export class Visual implements IVisual {
        
 
         this.transition = transition().duration(500).ease(easeLinear)
+
+        const baseLine = this.dim[1] -this.settings.waterfallSettings.fontSize*2     // ----------------------- FÖRBÄTTRA -----------------------------------
         
-        this.drawAxes()
+        let prevHeight = baseLine;
+        let heights: number[] = [];
+        for (let i = 0; i < this.data.items.length; i++) {
+            let d = this.data.items[i];
+            if (d.type === 1) {
+                prevHeight -= this.scaleY(d.value);
+            }
+            heights.push(prevHeight);
+        }
+        console.log("heights", heights)
+        
+        this.drawAxes(baseLine)
         this.drawCategoryLabels()
-        this.drawBars()
+        this.drawBars(heights)
+        this.drawConnectors(heights)
     }
 
     private static parseSettings(dataView: DataView): VisualSettings {
         return <VisualSettings>VisualSettings.parse(dataView);
     }
 
-    private drawAxes() {
-        const baseline = this.dim[1]- this.settings.waterfallSettings.fontSize*2 // -------------- DETTA GÖR ATT MELLANRUMMET BLIR MINDRE JU STÖRRE SVG VILKET BLIR BAKÅTVÄNT ---------- FÖRBÄTTRA --------------
+    private drawAxes(baseline: number) {
         const xAxis = this.svg.selectAll('line.x-axis').data(this.data.items) //.data binder de till data, men detta används inte just här. finns säkert mycket mer logiska sätt 
         xAxis.enter().append('line')
             .classed('x-axis', true)
@@ -115,49 +128,62 @@ export class Visual implements IVisual {
         xAxis.exit().remove();
     }
 
-    private drawBars() {
-        const connectors = this.svg.selectAll('line.bar').data(this.data.items);
-
-        const baseLine = this.dim[1] -this.settings.waterfallSettings.fontSize*2
+    private drawBars(heights: number[]) {
+        const bars = this.svg.selectAll('rect.bar').data(this.data.items);
+        const barWidth = 40
     
-        let prevHeight = baseLine;
-        let heights = [];
-        for (let i = 0; i < this.data.items.length; i++) {
-            let d = this.data.items[i];
-            if (d.type === 1) {
-                prevHeight -= this.scaleY(d.value);
-            }
-            heights.push(prevHeight);
-        }
-    
-        connectors.enter().append('line')
+        bars.enter().append('rect')
             .classed('bar', true)
             .attr('ix', (d, i) => i)
-            .attr('x1', d => this.scaleX(d.category))
-            .attr('y1', (d, i) => 
-                i > 0 
-                    ? (d.type === 1 
-                        ? heights[i - 1] 
-                            : baseLine
-                    ) 
-                    : baseLine
-            )
-            .attr('x2', d => this.scaleX(d.category))
-            .attr('y2', (d, i) => heights[i]);
+            .attr('x', d => this.scaleX(d.category)-barWidth/2)
+            .attr('y', (d, i) => heights[i])
+            .attr('width', barWidth)
+            .attr('height', (d, i) => 
+                                i > 0 
+                                    ? d.type === 1
+                                        ? heights[i - 1] - heights[i] 
+                                        : this.dim[1]-heights[i]-this.settings.waterfallSettings.fontSize*2 
+                                    : this.scaleY(d.value)); 
     
+        bars.transition(this.transition)
+            .attr('ix', (d, i) => i)
+            .attr('x', d => this.scaleX(d.category)-barWidth/2)
+            .attr('y', (d, i) => heights[i])
+            .attr('width', barWidth)
+            .attr('height', (d, i) => 
+                                i > 0 
+                                    ? d.type === 1
+                                        ? heights[i - 1] - heights[i] 
+                                        : this.dim[1]-heights[i]-this.settings.waterfallSettings.fontSize*2
+                                    : this.scaleY(d.value)); 
+        
+        bars.exit().remove();
+    }
+
+    private drawConnectors(heights: number[]) {
+        const connectors = this.svg.selectAll('line.connectors').data(this.data.items);
+
+        const barWidth = 40;
+
+        connectors.enter().append('line')
+            .classed('connector', true)
+            .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2)
+            .attr('y1', (d, i) => heights[i])
+            .attr('x2', (d, i) => 
+                            i < (heights.length - 1)
+                                ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
+                                : this.scaleX(d.category) + barWidth / 2)
+            .attr('y2', (d, i) => heights[i])
+
         connectors.transition(this.transition)
-            .attr('x1', d => this.scaleX(d.category))
-            .attr('y1', (d, i) => 
-                i > 0 
-                    ? (d.type === 1 
-                        ? heights[i - 1] 
-                            : baseLine
-                    ) 
-                    : baseLine
-            )
-            .attr('x2', d => this.scaleX(d.category))
-            .attr('y2', (d, i) => heights[i]);
-    
+            .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2)
+            .attr('y1', (d, i) => heights[i])
+            .attr('x2', (d, i) => 
+                            i < (heights.length - 1)
+                                ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
+                                : this.scaleX(d.category) + barWidth / 2)
+            .attr('y2', (d, i) => heights[i])
+
         connectors.exit().remove();
     }
 

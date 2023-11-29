@@ -19,7 +19,7 @@ export interface VData {
 export interface VDataItem {
     category: string,
     value: number,
-    type: number // 1 value, 2 cumulative, 3 total
+    type: number // 1 value, 2 cumulative total
 }
 
 export function transformData(options: VisualUpdateOptions): VData {
@@ -49,13 +49,11 @@ export function transformData(options: VisualUpdateOptions): VData {
                     })
                 }
             }
-            //total += <number>cumulative
-            //console.log("cumulative",cumulative)
             console.log("total",total)
             items.push({
                 category: <string>dv.values[i].source.groupName,
                 value: <number>total,
-                type: <number> 2 // 2 for cumulative
+                type: <number> 2 // 2 for cumulative total
             })
             data = {
                 items,
