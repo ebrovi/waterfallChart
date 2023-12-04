@@ -30,7 +30,7 @@
             "displayName": "Waterfall Settings",
             "properties": {
                 "defaultColor": {
-                    "displayName": "Default color",
+                    "displayName": "Outline color",
                     "type": {
                         "fill": {
                             "solid": {
@@ -39,8 +39,8 @@
                         }
                     }
                 },
-                "fill": {
-                    "displayName": "Fill",
+                "barColor": {
+                    "displayName": "Bar color",
                     "type": {
                         "fill": {
                             "solid": {
@@ -79,6 +79,24 @@
                                 "color": true
                             }
                         }
+                    }
+                },
+                "barWidth": {
+                    "displayName": "Bar Width",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "connectorWidth": {
+                    "displayName": "Connecting Width",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "gradientEnabled": {
+                    "displayName": "Gradient",
+                    "type": {
+                        "bool": true
                     }
                 }
             }

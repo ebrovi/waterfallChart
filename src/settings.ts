@@ -34,12 +34,14 @@ export class VisualSettings extends DataViewObjectsParser {
       }
 
     export class waterfallSettings {
-      public defaultColor: string = "E6E6E6";
-      public fill: string = "E6E6E6";
+      public defaultColor: string = "D5D2D2";
+      public barColor: string = "005EB9";
       public fontSize: number = 12;
       public fontFamily: string = "Arial, sans-serif"
       public fontColor: string = "#D5D2D2"
       public lineWidth: number = 3;
-      public sumEnabled: boolean = true;
+      public barWidth: number = 40;
+      public connectorWidth: number = 3;
+      public gradientEnabled: boolean = false;
      }
 
