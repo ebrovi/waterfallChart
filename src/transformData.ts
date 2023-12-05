@@ -4,6 +4,7 @@ import powerbi from "powerbi-visuals-api"
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions
 import IVisualHost = powerbi.extensibility.visual.IVisualHost
 import ISelectionId = powerbi.extensibility.ISelectionId
+import { max } from "d3"
 
 
 export interface VData {
@@ -32,17 +33,18 @@ export function transformData(options: VisualUpdateOptions, defaultColor: string
         let minValue = 0
         let maxValue = 0
         let total = 0
-        let color: string;
+        let color: string
+        let maxMinTot = []
         
         const items: VDataItem[] = []
         const grouping: VDataItem[] = []
 
         for (let i = 0; i < dv.values.length; i++) { //4
             try {
-                color = dv.categories[0].objects[i].waterfallSettings.barColor['solid'].color;
-            } catch(error) {
-                color = defaultColor;
-            }
+                    color = dv.categories[0].objects[i].waterfallSettings.barColor['solid'].color;
+                } catch(error) {
+                    color = defaultColor;
+                }
             for (let u = 0; u < dv.categories[0].values.length; u++) { //12
                 const value = dv.values[i].values[u]
                 try {
@@ -51,9 +53,12 @@ export function transformData(options: VisualUpdateOptions, defaultColor: string
                     color = defaultColor;
                 }
                 if (typeof value === "number" && !isNaN(value)){
-                    total += <number>value;
-                    maxValue = Math.max(maxValue, value)
-                    minValue = Math.min(minValue, value)
+                    total += value;
+                
+                    total < minValue ? minValue = Math.min(total, value) : maxValue = Math.max(total, value)
+                    //maxValue = Math.max(total, value)
+                    //minValue = Math.min(total, value)
+                    console.log("total",total, "min", minValue, "max", maxValue)
                     items.push({
                         category: <string>dv.categories[0].values[u],
                         value: <number>value,
@@ -62,7 +67,9 @@ export function transformData(options: VisualUpdateOptions, defaultColor: string
                     })
                 }
             }
-            console.log("total",total)
+            console.log("------- sum-------")
+            console.log("total",total, "min", minValue, "max", maxValue)
+            console.log("------------------")
             items.push({
                 category: <string>dv.values[i].source.groupName,
                 value: <number>total,
