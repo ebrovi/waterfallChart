@@ -86,8 +86,9 @@ export class Visual implements IVisual {
         
         this.scaleY = scaleLinear()
         .domain([this.data.minValue, this.data.maxValue])
-        .range([this.dim[1], 0+10])
+        .range([this.dim[1], 0])
 
+        console.log("0", this.scaleY(0))
         console.log("scaled min max", this.scaleY(this.data.minValue), this.scaleY(this.data.maxValue))
         console.log(this.dim[1])
 
@@ -109,7 +110,7 @@ export class Visual implements IVisual {
         this.drawCategoryLabels()
         //this.drawBars(barLength)
         
-       this.drawBars2(baseLine)
+       this.drawBars2()
         //this.darwBars3(baseLine)
         this.drawConnectors(barLength)
 
@@ -137,41 +138,7 @@ export class Visual implements IVisual {
         } 
     }
 
- 
-
-    private darwBars3 (baseLine: number) {
-        let cumulativeValue = baseLine;
-
-        const bars = this.svg.selectAll('rect.bar').data(this.data.items);
-        const barWidth = this.settings.waterfallSettings.barWidth;
-
-        bars.enter().append('rect')
-            .classed('bar', true)
-            .attr('ix', (d, i) => i)
-            .attr('x', d => this.scaleX(d.category) - barWidth / 2)
-            .attr('y', d => {
-                let yValue = this.scaleY(cumulativeValue);
-                if (d.value < 0) {
-                    yValue = this.scaleY(cumulativeValue + d.value);
-                }
-                cumulativeValue += d.value;
-                return yValue;
-            })
-            .attr('width', barWidth)
-            .attr('height', d => this.scaleY(Math.abs(d.value)))
-            .style('fill', d => {
-                if (this.settings.waterfallSettings.gradientEnabled) {
-                    const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
-                    this.applyGradient(gradientId, this.settings.waterfallSettings.barColor); // Pass the unique gradient id and color
-                    return `url(#${gradientId})`;
-                }
-                else {
-                    return d.color
-                }
-            });
-            }
-
-    private drawBars2(baseLine: number){
+    private drawBars2(){
         let prevH = this.scaleY(0);
 
         interface barObject {
@@ -185,45 +152,83 @@ export class Visual implements IVisual {
 
         let barArray: barObject[] = []; 
 
-        for (let i = 0; i < this.data.items.length; i++) {
-            console.log("prev",prevH)
+        /*or (let i = 0; i < this.data.items.length; i++) {
+            
+            let currentValue = this.data.items[i].value;
+            let startY = this.scaleY(cumulative)
+            let height = this.scaleY(Math.abs(currentValue));
+            
             if (this.data.items[i].type === 1) {
-                if (this.data.items[i].value < 0) {
-                barArray.push({
-                    startY: <number> prevH,
-                    dir: <number> -1,
-                    type: <number> this.data.items[i].type,
-                    value: <number> this.scaleY(this.data.items[i].value)
-                })
-                prevH += this.scaleY(this.data.items[i].value)
+                console.log("before", this.data.items[i].category,"prevH", prevH, "cumulative", cumulative, "startY", startY)
+                if (currentValue < 0) {
+                    startY = prevH;
                 }
                 else {
-                    prevH += this.scaleY(this.data.items[i].value)
-                    barArray.push({
-                        startY: <number> prevH,
-                        dir: <number> 1,
-                        type: <number> this.data.items[i].type,
-                        value: <number> this.scaleY(this.data.items[i].value)
-                    })
+                    startY = prevH - height
                 }
+                barArray.push({
+                    startY: <number> startY,
+                    dir: <number> currentValue < 0 ? -1 : 1,
+                    type: <number> this.data.items[i].type,
+                    value: <number> height
+                })
+                
+                prevH = startY + (currentValue < 0 ? height : -height);
+                cumulative += currentValue;
+                console.log("after", this.data.items[i].category,"prevH", prevH, "cumulative", cumulative, "startY", startY)
+                
             }
             else {
-                if (this.data.items[i].value < 0) {
-                    barArray.push({
-                        startY: <number> 0,
-                        dir: <number> -1,
-                        type: <number> this.data.items[i].type,
-                        value: <number> this.scaleY(this.data.items[i].value)
-                    })
-                    }
-                    else {
-                        barArray.push({
-                            startY: <number> prevH,
-                            dir: <number> 1,
-                            type: <number> this.data.items[i].type,
-                            value: <number> this.scaleY(this.data.items[i].value)
-                        })
-                    }
+                let partSumStart = currentValue < 0 ? this.scaleY(0) : this.scaleY(cumulative)
+                let partSumHeight = this.scaleY(Math.abs(currentValue));
+                barArray.push({
+                    startY: <number> partSumStart,
+                    dir: <number> currentValue < 0 ? -1 : 1,
+                    type: <number> this.data.items[i].type,
+                    value: <number> partSumHeight
+                })
+            }
+        }*/
+        let lastType1EndPosition = this.scaleY(0);
+        console.log()
+
+        for (let i = 0; i < this.data.items.length; i++) {
+            const currentItem = this.data.items[i];
+            let height = this.scaleY(0)-this.scaleY(Math.abs(currentItem.value));
+            console.log("value", currentItem.value,"height", height)
+        
+            if (currentItem.type === 1) {
+                let startY;
+        
+                if (currentItem.value < 0) {
+                    startY = prevH;
+                    prevH += height;
+                } else {
+                    startY = prevH - height;
+                    prevH -= height;
+                }
+        
+                cumulative += currentItem.value;
+                lastType1EndPosition = prevH; // Update last type 1 bar end position
+        
+                barArray.push({
+                    startY: startY,
+                    dir: currentItem.value < 0 ? -1 : 1,
+                    type: currentItem.type,
+                    value: height
+                });
+        
+            } else if (currentItem.type === 2) {
+                // For type 2 bars, calculate startY and height but do not update prevH or cumulative
+                let startY = currentItem.value - this.data.items[i-1].value < 0 ? this.scaleY(0) : this.scaleY(cumulative);
+                let partSumHeight = this.scaleY(0)-this.scaleY(Math.abs(currentItem.value));
+        
+                barArray.push({
+                    startY: startY,
+                    dir: currentItem.value < 0 ? -1 : 1,
+                    type: currentItem.type,
+                    value: partSumHeight
+                });
             }
         }
 
@@ -239,7 +244,7 @@ export class Visual implements IVisual {
             .attr('x', d => this.scaleX(d.category)-barWidth/2)
             .attr('y', (d, i) => barArray[i].startY)
             .attr('width', barWidth)
-            .attr('height', (d, i) => Math.abs(this.scaleY(d.value)) )
+            .attr('height', (d, i) => barArray[i].value )
             .style('fill', d => {
                 if (this.settings.waterfallSettings.gradientEnabled) {
                     const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
@@ -251,6 +256,24 @@ export class Visual implements IVisual {
                 }
             })
 
+        bars.transition(this.transition)
+        .attr('ix', (d, i) => i)
+            .attr('x', d => this.scaleX(d.category)-barWidth/2)
+            .attr('y', (d, i) => barArray[i].startY)
+            .attr('width', barWidth)
+            .attr('height', (d, i) => barArray[i].value )
+            .style('fill', d => {
+                if (this.settings.waterfallSettings.gradientEnabled) {
+                    const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
+                    this.applyGradient(gradientId, this.settings.waterfallSettings.barColor); // Pass the unique gradient id and color
+                    return `url(#${gradientId})`;
+                }
+                else {
+                    return d.color
+                }
+            })
+
+            bars.exit().remove();
 
     }
 
