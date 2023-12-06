@@ -34,8 +34,10 @@ export class VisualSettings extends DataViewObjectsParser {
       }
 
     export class waterfallSettings {
-      public defaultColor: string = "D5D2D2";
-      public barColor: string = "005EB9";
+      public defaultColor: string = "99999"
+      public posBarColor: string = "00782E";
+      public negBarColor: string = "B10606";
+      public sumBarColor: string = "003339";
       public fontSize: number = 12;
       public fontFamily: string = "Arial, sans-serif"
       public fontColor: string = "#D5D2D2"

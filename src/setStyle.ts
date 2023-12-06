@@ -6,9 +6,9 @@ import {VisualSettings} from "./settings"
 
 export function setStyle(settings: VisualSettings): void {
     const style = document.documentElement.style
-
-    style.setProperty('--default-color', settings.waterfallSettings.defaultColor),
-    style.setProperty('--bar-color', settings.waterfallSettings.barColor),
+    style.setProperty('--pos-bar-color', settings.waterfallSettings.posBarColor),
+    style.setProperty('--neg-bar-color', settings.waterfallSettings.negBarColor),
+    style.setProperty('--sum-bar-color', settings.waterfallSettings.sumBarColor),
     style.setProperty('--font-family', settings.waterfallSettings.fontFamily),
     style.setProperty('--font-size', `${settings.waterfallSettings.fontSize}pt`),
     style.setProperty('--font-color', settings.waterfallSettings.fontColor),

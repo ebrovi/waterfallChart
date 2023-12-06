@@ -68,7 +68,8 @@ export class Visual implements IVisual {
     public update(options: VisualUpdateOptions) {
         this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
         console.log('Visual update', options);
-        this.data = transformData(options, this.settings.waterfallSettings.barColor)
+        let colors = [this.settings.waterfallSettings.posBarColor, this.settings.waterfallSettings.negBarColor, this.settings.waterfallSettings.sumBarColor];
+        this.data = transformData(options, colors)
         console.log("this.data", this.data)
         
 
@@ -78,24 +79,20 @@ export class Visual implements IVisual {
         this.svg.attr('height', this.dim[1])
 
         this.scaleX = scalePoint()
-        .domain(Array.from(this.data.items, d => d.category))
-        .range([0, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
-        .padding(0.5)
+            .domain(Array.from(this.data.items, d => d.category))
+            .range([0, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
+            .padding(0.5)
     
-        console.log("min max", this.data.minValue, this.data.maxValue)
+        const baseLine = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth/2   // ----------------------- FÖRBÄTTRA -----------------------------------
         
         this.scaleY = scaleLinear()
-        .domain([this.data.minValue, this.data.maxValue])
-        .range([this.dim[1], 0])
-
-        console.log("0", this.scaleY(0))
-        console.log("scaled min max", this.scaleY(this.data.minValue), this.scaleY(this.data.maxValue))
-        console.log(this.dim[1])
+            .domain([this.data.minValue, this.data.maxValue])
+            .range([baseLine, 0]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
 
-        const baseLine = this.dim[1] -this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth/2   // ----------------------- FÖRBÄTTRA -----------------------------------
-        
+
+        // ---------------------------------------------
         let prevHeight = baseLine ;
         let barLength: number[] = [];
         for (let i = 0; i < this.data.items.length; i++) { //       ------------------------- height calculations need to be redone to not give negative barLength. abs value? need to know if negative value as this gives direction.
@@ -105,13 +102,45 @@ export class Visual implements IVisual {
             }
             barLength.push(prevHeight);
         }
+        // ---------------------------------------------
+
+        interface barObject {
+            startY: number,
+            dir: number,
+            value: number
+        }
+
+        let prevH = this.scaleY(0);
+        let cumulative = 0 
+        let barArray: barObject[] = []; 
+
+        for (let i = 0; i < this.data.items.length; i++) {
+            const currentItem = this.data.items[i];
+            let height = Math.abs(this.scaleY(0) - this.scaleY(currentItem.value));
+            let startY;
         
+            if (currentItem.type === 1) {
+                startY = (currentItem.value < 0) ? prevH : prevH - height;
+                prevH += (currentItem.value < 0) ? height : -height;
+                cumulative += currentItem.value;
+            } else if (currentItem.type === 2) {
+                startY = (currentItem.value - (i > 0 ? this.data.items[i-1].value : 0) < 0) 
+                         ? this.scaleY(0) 
+                         : this.scaleY(cumulative);
+            }
+        
+            barArray.push({
+                startY: startY,
+                dir: currentItem.value < 0 ? -1 : 1,
+                value: height
+            });
+        }
+
+
         this.drawXAxis(baseLine)
         this.drawCategoryLabels()
-        //this.drawBars(barLength)
         
-       this.drawBars2()
-        //this.darwBars3(baseLine)
+        this.drawBars(barArray)
         this.drawConnectors(barLength)
 
     }
@@ -138,103 +167,8 @@ export class Visual implements IVisual {
         } 
     }
 
-    private drawBars2(){
-        let prevH = this.scaleY(0);
-
-        interface barObject {
-            startY: number,
-            dir: number,
-            type: number;
-            value: number
-        }
-
-        let cumulative = 0 
-
-        let barArray: barObject[] = []; 
-
-        /*or (let i = 0; i < this.data.items.length; i++) {
-            
-            let currentValue = this.data.items[i].value;
-            let startY = this.scaleY(cumulative)
-            let height = this.scaleY(Math.abs(currentValue));
-            
-            if (this.data.items[i].type === 1) {
-                console.log("before", this.data.items[i].category,"prevH", prevH, "cumulative", cumulative, "startY", startY)
-                if (currentValue < 0) {
-                    startY = prevH;
-                }
-                else {
-                    startY = prevH - height
-                }
-                barArray.push({
-                    startY: <number> startY,
-                    dir: <number> currentValue < 0 ? -1 : 1,
-                    type: <number> this.data.items[i].type,
-                    value: <number> height
-                })
-                
-                prevH = startY + (currentValue < 0 ? height : -height);
-                cumulative += currentValue;
-                console.log("after", this.data.items[i].category,"prevH", prevH, "cumulative", cumulative, "startY", startY)
-                
-            }
-            else {
-                let partSumStart = currentValue < 0 ? this.scaleY(0) : this.scaleY(cumulative)
-                let partSumHeight = this.scaleY(Math.abs(currentValue));
-                barArray.push({
-                    startY: <number> partSumStart,
-                    dir: <number> currentValue < 0 ? -1 : 1,
-                    type: <number> this.data.items[i].type,
-                    value: <number> partSumHeight
-                })
-            }
-        }*/
-        let lastType1EndPosition = this.scaleY(0);
-        console.log()
-
-        for (let i = 0; i < this.data.items.length; i++) {
-            const currentItem = this.data.items[i];
-            let height = this.scaleY(0)-this.scaleY(Math.abs(currentItem.value));
-            console.log("value", currentItem.value,"height", height)
-        
-            if (currentItem.type === 1) {
-                let startY;
-        
-                if (currentItem.value < 0) {
-                    startY = prevH;
-                    prevH += height;
-                } else {
-                    startY = prevH - height;
-                    prevH -= height;
-                }
-        
-                cumulative += currentItem.value;
-                lastType1EndPosition = prevH; // Update last type 1 bar end position
-        
-                barArray.push({
-                    startY: startY,
-                    dir: currentItem.value < 0 ? -1 : 1,
-                    type: currentItem.type,
-                    value: height
-                });
-        
-            } else if (currentItem.type === 2) {
-                // For type 2 bars, calculate startY and height but do not update prevH or cumulative
-                let startY = currentItem.value - this.data.items[i-1].value < 0 ? this.scaleY(0) : this.scaleY(cumulative);
-                let partSumHeight = this.scaleY(0)-this.scaleY(Math.abs(currentItem.value));
-        
-                barArray.push({
-                    startY: startY,
-                    dir: currentItem.value < 0 ? -1 : 1,
-                    type: currentItem.type,
-                    value: partSumHeight
-                });
-            }
-        }
-
-        console.log("dim1", this.dim[1])
-        console.log("barArray",barArray)
-
+    private drawBars(barArray){
+    
         const bars = this.svg.selectAll('rect.bar').data(this.data.items);
         const barWidth = this.settings.waterfallSettings.barWidth
 
@@ -248,7 +182,7 @@ export class Visual implements IVisual {
             .style('fill', d => {
                 if (this.settings.waterfallSettings.gradientEnabled) {
                     const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
-                    this.applyGradient(gradientId, this.settings.waterfallSettings.barColor); // Pass the unique gradient id and color
+                    this.applyGradient(gradientId, d.color); // Pass the unique gradient id and color
                     return `url(#${gradientId})`;
                 }
                 else {
@@ -265,7 +199,7 @@ export class Visual implements IVisual {
             .style('fill', d => {
                 if (this.settings.waterfallSettings.gradientEnabled) {
                     const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
-                    this.applyGradient(gradientId, this.settings.waterfallSettings.barColor); // Pass the unique gradient id and color
+                    this.applyGradient(gradientId, d.color); // Pass the unique gradient id and color
                     return `url(#${gradientId})`;
                 }
                 else {
@@ -277,52 +211,33 @@ export class Visual implements IVisual {
 
     }
 
-    private drawBars(barLength: number[]) { // barLength blir från svgs 0 hörn så det blir den "nedre" delen visuellt 
-        const bars = this.svg.selectAll('rect.bar').data(this.data.items);
-        const barWidth = this.settings.waterfallSettings.barWidth
-        console.log("barLength",barLength)
-        bars.enter().append('rect')
-            .classed('bar', true)
-            .attr('ix', (d, i) => i)
-            .attr('x', d => this.scaleX(d.category)-barWidth/2)
-            .attr('y', (d, i) => barLength[i])
-            .attr('width', barWidth)
-            .attr('height', (d, i) => Math.abs(barLength[i]))
-            .style('fill', d => {
-                if (this.settings.waterfallSettings.gradientEnabled) {
-                    const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
-                    this.applyGradient(gradientId, this.settings.waterfallSettings.barColor); // Pass the unique gradient id and color
-                    return `url(#${gradientId})`;
-                }
-                else {
-                    return d.color
-                }
-            })
+    private drawConnectors2(barLength: number[]) {
         
+        const connectors = this.svg.selectAll('line.connectors').data(this.data.items);
+
+        const barWidth =  this.settings.waterfallSettings.barWidth
+        const connectorWidth = this.settings.waterfallSettings.connectorWidth
     
-        /*bars.transition(this.transition)
-            .attr('ix', (d, i) => i)
-            .attr('x', d => this.scaleX(d.category)-barWidth/2)
-            .attr('y', (d, i) => barLength[i])
-            .attr('width', barWidth)
-            .attr('height', (d, i) => 
-                                i > 0 
-                                    ? d.type === 1
-                                        ? barLength[i - 1] - barLength[i] 
-                                        : this.dim[1]-barLength[i]-this.settings.waterfallSettings.fontSize*2- this.settings.waterfallSettings.lineWidth
-                                    : this.scaleY(d.value)- this.settings.waterfallSettings.lineWidth/2) 
-            .style('fill', d => {
-                if (this.settings.waterfallSettings.gradientEnabled) {
-                    const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
-                    this.applyGradient(gradientId, this.settings.waterfallSettings.barColor); // Pass the unique gradient id and color
-                    return `url(#${gradientId})`;
-                }
-                else {
-                    return d.color
-                }
-            })
-        
-        bars.exit().remove();*/
+        connectors.enter().append('line')
+            .classed('connectors', true)
+            .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2 )
+            .attr('y1', (d, i) => barLength[i]+ connectorWidth/2)
+            .attr('x2', (d, i) => 
+                            i < (barLength.length - 1)
+                                ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
+                                : this.scaleX(d.category) + barWidth / 2)
+            .attr('y2', (d, i) => barLength[i]+ connectorWidth/2);
+
+        connectors.transition(this.transition)
+            .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2)
+            .attr('y1', (d, i) => barLength[i]+ connectorWidth/2)
+            .attr('x2', (d, i) => 
+                            i < (barLength.length - 1)
+                                ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
+                                : this.scaleX(d.category) + barWidth / 2)
+            .attr('y2', (d, i) => barLength[i]+ connectorWidth/2);
+
+        connectors.exit().remove();        
     }
 
     private drawConnectors(barLength: number[]) {
@@ -383,6 +298,9 @@ export class Visual implements IVisual {
     }
 
     private applyGradient(gradientId: string, barColor: string) {
+
+        const lighterColor = this.lightenColor(barColor, 35)
+
         let gradient = this.svg.select(`#${gradientId}`);
     
         if (gradient.empty()) {
@@ -410,8 +328,37 @@ export class Visual implements IVisual {
         stop1.attr("stop-color", barColor)
              .attr("stop-opacity", 1);
     
-        stop2.attr("stop-color", '#D5D2D2')
+        stop2.attr("stop-color", lighterColor)
              .attr("stop-opacity", 1);
+    }
+
+    private padHex(str: string): string {
+        return str.length === 1 ? '0' + str : str;
+    }
+
+    private lightenColor(hex, percent) {
+        // Ensure the percent is between 0 and 100
+        percent = Math.min(100, Math.max(0, percent));
+    
+        // Convert hex to RGB
+        let r = parseInt(hex.substring(1, 3), 16);
+        let g = parseInt(hex.substring(3, 5), 16);
+        let b = parseInt(hex.substring(5, 7), 16);
+    
+        // Calculate the adjustment value
+        let adjust = (percent / 100) * 255;
+    
+        // Increase each component's value by the adjustment value
+        // Make sure the new values are within 0-255 range
+        r = Math.min(255, r + adjust);
+        g = Math.min(255, g + adjust);
+        b = Math.min(255, b + adjust);
+    
+        // Convert RGB back to hex
+        return "#" + 
+        this.padHex(Math.round(r).toString(16)) +
+        this.padHex(Math.round(g).toString(16)) +
+        this.padHex(Math.round(b).toString(16));
     }
 
     /**
@@ -429,11 +376,25 @@ export class Visual implements IVisual {
                 objectEnumeration.push ({
                     objectName,
                     properties: {
-                        defaultColor: this.settings.waterfallSettings.defaultColor
+                        posBarColor: this.settings.waterfallSettings.posBarColor
                     },
                     selector: null
                 }),
                 objectEnumeration.push ({
+                    objectName,
+                    properties: {
+                        negBarColor: this.settings.waterfallSettings.negBarColor
+                    },
+                    selector: null
+                }),
+                objectEnumeration.push ({
+                    objectName,
+                    properties: {
+                        sumBarColor: this.settings.waterfallSettings.sumBarColor
+                    },
+                    selector: null
+                }),
+               /* objectEnumeration.push ({    //   -------------------------------- update if FX color needed
                     objectName,
                     properties: {
                         barColor: this.settings.waterfallSettings.barColor
@@ -443,7 +404,7 @@ export class Visual implements IVisual {
                     propertyInstanceKind: { // Detta är vad som blir "fx knappen" conditional formatting 
                         dataPointColor: VisualEnumerationInstanceKinds.ConstantOrRule  /// Här defineras det om färgen ska vara solid eller enligt field view. Gradient fungerar inte 
                     }
-                }),
+                }),*/
                 objectEnumeration.push ({
                     objectName,
                     properties: {

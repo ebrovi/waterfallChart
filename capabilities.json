@@ -39,8 +39,28 @@
                         }
                     }
                 },
-                "barColor": {
-                    "displayName": "Bar color",
+                "posBarColor": {
+                    "displayName": "Positive bar color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "negBarColor": {
+                    "displayName": "Negative bar color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "sumBarColor": {
+                    "displayName": "Summarizing bar color",
                     "type": {
                         "fill": {
                             "solid": {
