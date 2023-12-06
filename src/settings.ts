@@ -45,5 +45,6 @@ export class VisualSettings extends DataViewObjectsParser {
       public barWidth: number = 40;
       public connectorWidth: number = 3;
       public gradientEnabled: boolean = false;
+      public lineColor: string = "#D5D2D2"
      }
 

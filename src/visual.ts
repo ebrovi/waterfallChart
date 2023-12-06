@@ -87,7 +87,7 @@ export class Visual implements IVisual {
         
         this.scaleY = scaleLinear()
             .domain([this.data.minValue, this.data.maxValue])
-            .range([baseLine, 0]) // so bars dont go over categories
+            .range([baseLine - this.settings.waterfallSettings.lineWidth, 0]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
 
@@ -121,7 +121,7 @@ export class Visual implements IVisual {
         
             if (currentItem.type === 1) {
                 startY = (currentItem.value < 0) ? prevH : prevH - height;
-                prevH += (currentItem.value < 0) ? height : -height;
+                prevH += (currentItem.value < 0) ? height : - height;
                 cumulative += currentItem.value;
             } else if (currentItem.type === 2) {
                 startY = currentItem.value < 0
@@ -140,8 +140,7 @@ export class Visual implements IVisual {
         this.drawCategoryLabels()
         
         this.drawBars(barArray)
-        //this.drawConnectors(barLength)
-        this.drawConnectors2(barArray)
+        this.drawConnectors(barArray)
 
     }
 
@@ -211,7 +210,8 @@ export class Visual implements IVisual {
 
     }
 
-    private drawConnectors2(barArray) {
+    private drawConnectors(barArray) {
+        console.log(barArray)
         
         const connectors = this.svg.selectAll('line.connectors').data(this.data.items);
 
@@ -221,50 +221,21 @@ export class Visual implements IVisual {
         connectors.enter().append('line')
             .classed('connectors', true)
             .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2 )
-            .attr('y1', (d, i) => barArray[i]+ connectorWidth/2)
+            .attr('y1', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
             .attr('x2', (d, i) => 
                             i < (barArray.length - 1)
                                 ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
                                 : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => barArray[i]+ connectorWidth/2);
+            .attr('y2', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
 
         connectors.transition(this.transition)
-            .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2)
-            .attr('y1', (d, i) => barArray[i]+ connectorWidth/2)
-            .attr('x2', (d, i) => 
-                            i < (barArray.length - 1)
-                                ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
-                                : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => barArray[i]+ connectorWidth/2);
-
-        connectors.exit().remove();        
-    }
-
-    private drawConnectors(barLength: number[]) {
-        
-        const connectors = this.svg.selectAll('line.connectors').data(this.data.items);
-
-        const barWidth =  this.settings.waterfallSettings.barWidth
-        const connectorWidth = this.settings.waterfallSettings.connectorWidth
-    
-        connectors.enter().append('line')
-            .classed('connectors', true)
             .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2 )
-            .attr('y1', (d, i) => barLength[i]+ connectorWidth/2)
+            .attr('y1', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
             .attr('x2', (d, i) => 
-                            i < (barLength.length - 1)
+                            i < (barArray.length - 1)
                                 ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
                                 : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => barLength[i]+ connectorWidth/2);
-
-        connectors.transition(this.transition)
-            .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2)
-            .attr('y1', (d, i) => barLength[i]+ connectorWidth/2)
-            .attr('x2', (d, i) => 
-                            i < (barLength.length - 1)
-                                ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
-                                : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => barLength[i]+ connectorWidth/2);
+            .attr('y2', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
 
         connectors.exit().remove();        
     }
@@ -413,7 +384,8 @@ export class Visual implements IVisual {
                         fontFamily: this.settings.waterfallSettings.fontFamily,
                         fontColor: this.settings.waterfallSettings.fontColor,
                         connectorWidth: this.settings.waterfallSettings.connectorWidth,
-                        gradientEnabled: this.settings.waterfallSettings.gradientEnabled
+                        gradientEnabled: this.settings.waterfallSettings.gradientEnabled,
+                        lineColor: this.settings.waterfallSettings.lineColor
                     },
                     selector: null
                 })

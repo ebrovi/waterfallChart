@@ -107,6 +107,16 @@
                         "numeric": true
                     }
                 },
+                "lineColor": {
+                    "displayName": "Line color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
                 "connectorWidth": {
                     "displayName": "Connecting Width",
                     "type": {
