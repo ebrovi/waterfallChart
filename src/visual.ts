@@ -124,7 +124,7 @@ export class Visual implements IVisual {
                 prevH += (currentItem.value < 0) ? height : -height;
                 cumulative += currentItem.value;
             } else if (currentItem.type === 2) {
-                startY = (currentItem.value - (i > 0 ? this.data.items[i-1].value : 0) < 0) 
+                startY = currentItem.value < 0
                          ? this.scaleY(0) 
                          : this.scaleY(cumulative);
             }
@@ -136,12 +136,12 @@ export class Visual implements IVisual {
             });
         }
 
-
         this.drawXAxis(baseLine)
         this.drawCategoryLabels()
         
         this.drawBars(barArray)
-        this.drawConnectors(barLength)
+        //this.drawConnectors(barLength)
+        this.drawConnectors2(barArray)
 
     }
 
@@ -211,7 +211,7 @@ export class Visual implements IVisual {
 
     }
 
-    private drawConnectors2(barLength: number[]) {
+    private drawConnectors2(barArray) {
         
         const connectors = this.svg.selectAll('line.connectors').data(this.data.items);
 
@@ -221,21 +221,21 @@ export class Visual implements IVisual {
         connectors.enter().append('line')
             .classed('connectors', true)
             .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2 )
-            .attr('y1', (d, i) => barLength[i]+ connectorWidth/2)
+            .attr('y1', (d, i) => barArray[i]+ connectorWidth/2)
             .attr('x2', (d, i) => 
-                            i < (barLength.length - 1)
+                            i < (barArray.length - 1)
                                 ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
                                 : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => barLength[i]+ connectorWidth/2);
+            .attr('y2', (d, i) => barArray[i]+ connectorWidth/2);
 
         connectors.transition(this.transition)
             .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2)
-            .attr('y1', (d, i) => barLength[i]+ connectorWidth/2)
+            .attr('y1', (d, i) => barArray[i]+ connectorWidth/2)
             .attr('x2', (d, i) => 
-                            i < (barLength.length - 1)
+                            i < (barArray.length - 1)
                                 ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
                                 : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => barLength[i]+ connectorWidth/2);
+            .attr('y2', (d, i) => barArray[i]+ connectorWidth/2);
 
         connectors.exit().remove();        
     }

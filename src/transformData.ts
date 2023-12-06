@@ -35,13 +35,7 @@ export function transformData(options: VisualUpdateOptions, barColors: string[])
         const items: VDataItem[] = [];
         const grouping: VDataItem[] = [];
 
-
-
         for (let i = 0; i < dv.values.length; i++) {
-            /*if (dv.categories[0].objects && dv.categories[0].objects[i] && dv.categories[0].objects[i].waterfallSettings) {
-                color = dv.categories[0].objects[i].waterfallSettings.barColor['solid'].color || defaultColor;
-            }*/
-
             for (let u = 0; u < dv.categories[0].values.length; u++) {
                 const value = dv.values[i].values[u];
 
