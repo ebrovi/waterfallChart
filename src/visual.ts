@@ -136,11 +136,12 @@ export class Visual implements IVisual {
             });
         }
 
-        this.drawXAxis(baseLine)
+        this.drawXAxis()
         this.drawCategoryLabels()
         
         this.drawBars(barArray)
         this.drawConnectors(barArray)
+        
 
     }
 
@@ -149,21 +150,22 @@ export class Visual implements IVisual {
     }
 
 
-    private drawXAxis(baseline: number) {
-        let xAxisLine = this.svg.select('line.x-axis');
-        if (xAxisLine.empty()) {
-            xAxisLine = this.svg.append('line').classed('x-axis', true);
-        }
+    private drawXAxis() {
+        const xAxis = this.svg.selectAll('line.x-axis').data([0]) // Binding a single-element array
+          
+        xAxis.enter().append('line')
+            .classed('x-axis', true)
+            .attr('x1',0)
+            .attr('y1', this.scaleY(0))
+            .attr('x2', this.scaleX.range()[1] )
+            .attr('y2', this.scaleY(0))
+
+        xAxis.transition(this.transition)
+            .attr('x1',0)
+            .attr('y1', this.scaleY(0))
+            .attr('x2', this.scaleX.range()[1] )
+            .attr('y2', this.scaleY(0))
     
-        xAxisLine
-            .attr('x1', 0)
-            .attr('y1', baseline)
-            .attr('x2', this.scaleX.range()[1])
-            .attr('y2', baseline);
-    
-        if (this.transition) {
-            xAxisLine.transition(this.transition);
-        } 
     }
 
     private drawBars(barArray){
