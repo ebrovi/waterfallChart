@@ -87,7 +87,7 @@ export class Visual implements IVisual {
         
         this.scaleY = scaleLinear()
             .domain([this.data.minValue, this.data.maxValue])
-            .range([baseLine - this.settings.waterfallSettings.lineWidth, 0]) // so bars dont go over categories
+            .range([baseLine - this.settings.waterfallSettings.lineWidth- this.settings.waterfallSettings.fontSize, this.settings.waterfallSettings.fontSize]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
 
@@ -141,8 +141,7 @@ export class Visual implements IVisual {
         
         this.drawBars(barArray)
         this.drawConnectors(barArray)
-        
-
+        this.drawDataLabel(barArray)
     }
 
     private static parseSettings(dataView: DataView): VisualSettings {
@@ -242,6 +241,48 @@ export class Visual implements IVisual {
         connectors.exit().remove();        
     }
 
+    private drawDataLabel(barArray) {
+        const dataLabel = this.svg.selectAll('text.data-label').data(this.data.items)
+
+        const barWidth =  this.settings.waterfallSettings.barWidth
+
+        const margin = this.settings.waterfallSettings.fontSize/2
+
+        dataLabel.enter().append('text')
+            .classed('data-label', true)
+            .attr('x', d => this.scaleX(d.category))
+            .attr('y', (d,i) => {
+                let yPos = 0
+                barArray[i].dir === 1 || d.type === 2 ? yPos = barArray[i].startY - margin : yPos = barArray[i].startY + barArray[i].value + margin*3
+
+                return yPos
+            })
+            .text(d => d.value)
+            /*.text(d => {
+                if (this.settings.lollipopSettings.dataLabelEnabled) {
+                    return d.value
+                }
+            })*/
+            .style('fill', this.settings.waterfallSettings.fontColor)
+
+        dataLabel.transition(this.transition)
+            .attr('x', d => this.scaleX(d.category))
+            .attr('y', (d,i) => {
+                let yPos = 0
+                barArray[i].dir === 1 || d.type === 2 ? yPos = barArray[i].startY - margin : yPos = barArray[i].startY + barArray[i].value + margin*3
+                return yPos
+            })
+            .text(d => d.value)
+            /*.text(d => {
+                if (this.settings.lollipopSettings.dataLabelEnabled) {
+                    return d.value
+                }
+            })*/
+            .style('fill', this.settings.waterfallSettings.fontColor)
+
+        dataLabel.exit().remove();     
+    }
+
     private drawCategoryLabels(){
 
         const catLabels = this.svg.selectAll('text.category-label').data(this.data.items)
@@ -310,19 +351,14 @@ export class Visual implements IVisual {
     }
 
     private lightenColor(hex, percent) {
-        // Ensure the percent is between 0 and 100
         percent = Math.min(100, Math.max(0, percent));
     
-        // Convert hex to RGB
         let r = parseInt(hex.substring(1, 3), 16);
         let g = parseInt(hex.substring(3, 5), 16);
         let b = parseInt(hex.substring(5, 7), 16);
     
-        // Calculate the adjustment value
         let adjust = (percent / 100) * 255;
     
-        // Increase each component's value by the adjustment value
-        // Make sure the new values are within 0-255 range
         r = Math.min(255, r + adjust);
         g = Math.min(255, g + adjust);
         b = Math.min(255, b + adjust);
