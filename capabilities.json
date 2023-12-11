@@ -69,6 +69,12 @@
                         }
                     }
                 },
+                "gradientEnabled": {
+                    "displayName": "Gradient",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "lineWidth": {
                     "displayName": "Line Width",
                     "type": {
@@ -123,8 +129,8 @@
                         "numeric": true
                     }
                 },
-                "gradientEnabled": {
-                    "displayName": "Gradient",
+                "dataLabel": {
+                    "displayName": "Data label",
                     "type": {
                         "bool": true
                     }

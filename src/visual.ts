@@ -68,7 +68,13 @@ export class Visual implements IVisual {
     public update(options: VisualUpdateOptions) {
         this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
         console.log('Visual update', options);
-        let colors = [this.settings.waterfallSettings.posBarColor, this.settings.waterfallSettings.negBarColor, this.settings.waterfallSettings.sumBarColor];
+        let colors = [
+            this.settings.waterfallSettings.posBarColor, 
+            this.settings.waterfallSettings.negBarColor, 
+            this.settings.waterfallSettings.sumBarColor];
+
+        console.log(colors)
+
         this.data = transformData(options, colors)
         console.log("this.data", this.data)
         
@@ -84,25 +90,12 @@ export class Visual implements IVisual {
             .padding(0.5)
     
         const baseLine = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth/2   // ----------------------- FÖRBÄTTRA -----------------------------------
-        
+
         this.scaleY = scaleLinear()
             .domain([this.data.minValue, this.data.maxValue])
-            .range([baseLine - this.settings.waterfallSettings.lineWidth- this.settings.waterfallSettings.fontSize, this.settings.waterfallSettings.fontSize]) // so bars dont go over categories
+            .range([baseLine - this.settings.waterfallSettings.lineWidth- this.settings.waterfallSettings.fontSize * 2, this.settings.waterfallSettings.fontSize * 2.5]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
-
-
-        // ---------------------------------------------
-        let prevHeight = baseLine ;
-        let barLength: number[] = [];
-        for (let i = 0; i < this.data.items.length; i++) { //       ------------------------- height calculations need to be redone to not give negative barLength. abs value? need to know if negative value as this gives direction.
-            let d = this.data.items[i];
-            if (d.type === 1) {
-                prevHeight -= this.scaleY(d.value);
-            }
-            barLength.push(prevHeight);
-        }
-        // ---------------------------------------------
 
         interface barObject {
             startY: number,
@@ -119,7 +112,7 @@ export class Visual implements IVisual {
             let height = Math.abs(this.scaleY(0) - this.scaleY(currentItem.value));
             let startY;
         
-            if (currentItem.type === 1) {
+            if (currentItem.type < 2) {
                 startY = (currentItem.value < 0) ? prevH : prevH - height;
                 prevH += (currentItem.value < 0) ? height : - height;
                 cumulative += currentItem.value;
@@ -136,18 +129,22 @@ export class Visual implements IVisual {
             });
         }
 
+        const sideMargin = this.settings.waterfallSettings.fontSize // tillfällig
+
+        this.defGradients(colors) 
         this.drawXAxis()
+        this.drawYAxis(baseLine, sideMargin)
+        this.yValues()
         this.drawCategoryLabels()
-        
-        this.drawBars(barArray)
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
+        this.drawBars(barArray)
+        
     }
 
     private static parseSettings(dataView: DataView): VisualSettings {
         return <VisualSettings>VisualSettings.parse(dataView);
     }
-
 
     private drawXAxis() {
         const xAxis = this.svg.selectAll('line.x-axis').data([0]) // Binding a single-element array
@@ -164,7 +161,44 @@ export class Visual implements IVisual {
             .attr('y1', this.scaleY(0))
             .attr('x2', this.scaleX.range()[1] )
             .attr('y2', this.scaleY(0))
+
+        xAxis.exit().remove()
     
+    }
+
+    private drawYAxis(baseline, sideMargin) {
+        const yAxis = this.svg.selectAll('line.y-axis').data([0]) // Binding a single-element array
+          
+        yAxis.enter().append('line')
+            .classed('y-axis', true)
+            .attr('x1',sideMargin)
+            .attr('y1', 0)
+            .attr('x2', sideMargin )
+            .attr('y2', baseline)
+
+        yAxis.transition(this.transition)
+            .attr('x1',sideMargin)
+            .attr('y1', 0)
+            .attr('x2', sideMargin )
+            .attr('y2', baseline)
+        
+        yAxis.exit().remove()
+    }
+
+    private yValues() {
+        const yValues = this.svg.selectAll('text.y-val').data(this.data.items)
+
+        yValues.enter().append('text')
+            .classed('data-label', true)
+            .attr('x', d => this.scaleX(d.category))
+            .attr('y', (d,i) => {
+                let yPos = 0
+
+                return yPos
+            })
+            .text(d => d.value)
+            .style('fill', this.settings.waterfallSettings.fontColor)
+
     }
 
     private drawBars(barArray){
@@ -181,9 +215,8 @@ export class Visual implements IVisual {
             .attr('height', (d, i) => barArray[i].value )
             .style('fill', d => {
                 if (this.settings.waterfallSettings.gradientEnabled) {
-                    const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
-                    this.applyGradient(gradientId, d.color); // Pass the unique gradient id and color
-                    return `url(#${gradientId})`;
+                    const gradientType = d.type < 0 ? 'neg' : (d.type === 2 ? 'sum' : 'pos');
+                    return `url(#${gradientType}-gradient)`;
                 }
                 else {
                     return d.color
@@ -198,9 +231,8 @@ export class Visual implements IVisual {
             .attr('height', (d, i) => barArray[i].value )
             .style('fill', d => {
                 if (this.settings.waterfallSettings.gradientEnabled) {
-                    const gradientId = `gradientColor${d.category.replace(/[^a-zA-Z0-9]/g, '')}`; // Generate a unique gradient id based on the category
-                    this.applyGradient(gradientId, d.color); // Pass the unique gradient id and color
-                    return `url(#${gradientId})`;
+                    const gradientType = d.type < 0 ? 'neg' : (d.type === 2 ? 'sum' : 'pos');
+                    return `url(#${gradientType}-gradient)`;
                 }
                 else {
                     return d.color
@@ -244,8 +276,6 @@ export class Visual implements IVisual {
     private drawDataLabel(barArray) {
         const dataLabel = this.svg.selectAll('text.data-label').data(this.data.items)
 
-        const barWidth =  this.settings.waterfallSettings.barWidth
-
         const margin = this.settings.waterfallSettings.fontSize/2
 
         dataLabel.enter().append('text')
@@ -254,15 +284,13 @@ export class Visual implements IVisual {
             .attr('y', (d,i) => {
                 let yPos = 0
                 barArray[i].dir === 1 || d.type === 2 ? yPos = barArray[i].startY - margin : yPos = barArray[i].startY + barArray[i].value + margin*3
-
                 return yPos
             })
-            .text(d => d.value)
-            /*.text(d => {
-                if (this.settings.lollipopSettings.dataLabelEnabled) {
+            .text(d => {
+                if (this.settings.waterfallSettings.dataLabel) {
                     return d.value
                 }
-            })*/
+            })
             .style('fill', this.settings.waterfallSettings.fontColor)
 
         dataLabel.transition(this.transition)
@@ -273,11 +301,11 @@ export class Visual implements IVisual {
                 return yPos
             })
             .text(d => d.value)
-            /*.text(d => {
-                if (this.settings.lollipopSettings.dataLabelEnabled) {
+            .text(d => {
+                if (this.settings.waterfallSettings.dataLabel) {
                     return d.value
                 }
-            })*/
+            })
             .style('fill', this.settings.waterfallSettings.fontColor)
 
         dataLabel.exit().remove();     
@@ -311,39 +339,31 @@ export class Visual implements IVisual {
         return catLabels        
     }
 
-    private applyGradient(gradientId: string, barColor: string) {
-
-        const lighterColor = this.lightenColor(barColor, 35)
-
-        let gradient = this.svg.select(`#${gradientId}`);
+    private defGradients(colors) {
+        const types = ['pos', 'neg', 'sum'];
     
-        if (gradient.empty()) {
-            gradient = this.svg.append("defs")
-                .append("linearGradient")
-                .attr("id", gradientId);
-        }
+        types.forEach((type, index) => {
+            const gradientId = `${type}-gradient`;
+            const barColor = colors[index];
+            const lighterColor = this.lightenColor(barColor, 25);
+            console.log(gradientId, barColor, lighterColor)
     
-        gradient.attr("x1", "0%")
-            .attr("y1", "0%")
-            .attr("x2", "100%")
-            .attr("y2", "100%");
+            let gradient = this.svg.select(`#${gradientId}`);
+            if (gradient.empty()) {
+                gradient = this.svg.append("defs")
+                    .append("linearGradient")
+                    .attr("id", gradientId)
+                    .attr("x1", "0%") 
+                    .attr("y1", "0%")
+                    .attr("x2", "100%") 
+                    .attr("y2", "100%");
     
-        let stop1 = gradient.select("stop:first-child");
-        let stop2 = gradient.select("stop:last-child");
-    
-        if (stop1.empty()) {
-            stop1 = gradient.append("stop").attr("offset", "30%");
-        }
-    
-        if (stop2.empty()) {
-            stop2 = gradient.append("stop").attr("offset", "100%");
-        }
-    
-        stop1.attr("stop-color", barColor)
-             .attr("stop-opacity", 1);
-    
-        stop2.attr("stop-color", lighterColor)
-             .attr("stop-opacity", 1);
+                gradient.append("stop").attr("offset", "30%").attr("stop-color", barColor);
+                gradient.append("stop").attr("offset", "100%").attr("stop-color", lighterColor);
+            }
+            console.log("gradient", gradient)
+        })
+        
     }
 
     private padHex(str: string): string {
@@ -363,7 +383,6 @@ export class Visual implements IVisual {
         g = Math.min(255, g + adjust);
         b = Math.min(255, b + adjust);
     
-        // Convert RGB back to hex
         return "#" + 
         this.padHex(Math.round(r).toString(16)) +
         this.padHex(Math.round(g).toString(16)) +
@@ -376,6 +395,8 @@ export class Visual implements IVisual {
      *
      */
     public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
+
+        // här sätts ordningen i hur det displayas i powerbi
 
         const objectName: string = options.objectName
         const objectEnumeration: VisualObjectInstance[] = []
@@ -406,24 +427,26 @@ export class Visual implements IVisual {
                /* objectEnumeration.push ({    //   -------------------------------- update if FX color needed
                     objectName,
                     properties: {
-                        barColor: this.settings.waterfallSettings.barColor
+                        sumBarColor: this.settings.waterfallSettings.sumBarColor
+                        //negBarColor: this.settings.waterfallSettings.negBarColor
                     },
                     selector: dataViewWildcard.createDataViewWildcardSelector(dataViewWildcard.DataViewWildcardMatchingOption.InstancesAndTotals),
-                    altConstantValueSelector: this.settings.waterfallSettings.barColor,  
+                    altConstantValueSelector: this.settings.waterfallSettings.sumBarColor,  
                     propertyInstanceKind: { // Detta är vad som blir "fx knappen" conditional formatting 
-                        dataPointColor: VisualEnumerationInstanceKinds.ConstantOrRule  /// Här defineras det om färgen ska vara solid eller enligt field view. Gradient fungerar inte 
+                        sumBarColor: VisualEnumerationInstanceKinds.ConstantOrRule  /// Här defineras det om färgen ska vara solid eller enligt field view. Gradient fungerar inte 
                     }
                 }),*/
                 objectEnumeration.push ({
                     objectName,
                     properties: {
+                        gradientEnabled: this.settings.waterfallSettings.gradientEnabled,
                         lineWidth: this.settings.waterfallSettings.lineWidth,
                         fontSize: this.settings.waterfallSettings.fontSize,
                         fontFamily: this.settings.waterfallSettings.fontFamily,
                         fontColor: this.settings.waterfallSettings.fontColor,
                         connectorWidth: this.settings.waterfallSettings.connectorWidth,
-                        gradientEnabled: this.settings.waterfallSettings.gradientEnabled,
-                        lineColor: this.settings.waterfallSettings.lineColor
+                        lineColor: this.settings.waterfallSettings.lineColor,
+                        dataLabel: this.settings.waterfallSettings.dataLabel
                     },
                     selector: null
                 })

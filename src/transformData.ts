@@ -1,5 +1,86 @@
 'use strict'
 
+/*import powerbi from "powerbi-visuals-api";
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+
+export interface VData {
+    items: VDataItem[],
+    minValue: number,
+    maxValue: number,
+    total: number,
+    grouping: VDataItem[],
+    formatString: string, 
+}
+
+export interface VDataItem {
+    category: string,
+    value: number,
+    type: number, // 1 value, 2 cumulative total
+    color: string
+}
+
+export function transformData(options: VisualUpdateOptions, barColors: string[]): VData {
+    let data: VData = {
+        items: [],
+        minValue: 0,
+        maxValue: 0,
+        total: 0,
+        grouping: [],
+        formatString: '',
+    };
+
+    try {
+        if (!options.dataViews || options.dataViews.length === 0 || !options.dataViews[0].categorical) {
+            throw new Error("DataView is not defined or not in expected format.");
+        }
+
+        const dv = options.dataViews[0].categorical;
+        let total = 0;
+
+        for (let i = 0; i < dv.values.length; i++) {
+            console.log(dv)
+            for (let u = 0; u < dv.categories[0].values.length; u++) {
+                const value = dv.values[i].values[u];
+
+                if (typeof value !== "number" || isNaN(value)) {
+                    console.warn(`Invalid value at ${i}, ${u}: `, value);
+                    continue;
+                }
+
+                total += value;
+                data.minValue = Math.min(data.minValue, total, value);
+                data.maxValue = Math.max(data.maxValue, total, value);
+
+                const colorIndex = value > 0 ? 0 : 1;
+                const color = barColors[colorIndex];
+                console.log()
+
+                data.items.push({
+                    category: dv.categories[0].values[u] as string,
+                    value: value as number,
+                    type: 1,
+                    color: color
+                });
+            }
+
+            const sumColor = barColors[2];
+            data.items.push({
+                category: dv.values[i].source.groupName as string,
+                value: total,
+                type: 2,
+                color: sumColor,
+            });
+        }
+
+        data.total = total;
+        data.formatString = dv.values[0].source.format || '';
+
+    } catch (error) {
+        console.error('Error in transformData:', error);
+    }
+
+    return data;
+}*/
 import powerbi from "powerbi-visuals-api"
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions
 import IVisualHost = powerbi.extensibility.visual.IVisualHost
@@ -50,7 +131,7 @@ export function transformData(options: VisualUpdateOptions, barColors: string[])
                     items.push({
                         category: <string>dv.categories[0].values[u],
                         value: <number>value,
-                        type: <number> 1, // 1 for value,
+                        type: <number> value > 0 ? 1 : -1, // 1 for value,
                         color: color
                     })
                 }
@@ -88,72 +169,3 @@ export function transformData(options: VisualUpdateOptions, barColors: string[])
 
     return data;
 }
-/*export function transformData(options: VisualUpdateOptions, defaultColor: string): VData {
-    let data: VData;
-    
-     try {
-        const dv = options.dataViews[0].categorical;
-
-        let minValue = 0
-        let maxValue = 0
-        let total = 0
-        let color: string
-        
-        const items: VDataItem[] = []
-        const grouping: VDataItem[] = []
-
-        for (let i = 0; i < dv.values.length; i++) { //4
-            try {
-                    color = dv.categories[0].objects[i].waterfallSettings.barColor['solid'].color;
-                } catch(error) {
-                    color = defaultColor;
-                }
-            for (let u = 0; u < dv.categories[0].values.length; u++) { //12
-                const value = dv.values[i].values[u]
-                try {
-                    color = dv.categories[0].objects[i].waterfallSettings.barColor['solid'].color;
-                } catch(error) {
-                    color = defaultColor;
-                }
-                if (typeof value === "number" && !isNaN(value)){
-                    total += value;
-                
-                    total < minValue ? minValue = Math.min(total, value) : maxValue = Math.max(total, value)
-                    console.log("total",total, "min", minValue, "max", maxValue)
-                    items.push({
-                        category: <string>dv.categories[0].values[u],
-                        value: <number>value,
-                        type: <number> 1, // 1 for value,
-                        color,
-                    })
-                }
-            }
-            items.push({
-                category: <string>dv.values[i].source.groupName,
-                value: <number>total,
-                type: <number> 2, // 2 for cumulative total
-                color,
-            })
-            data = {
-                items,
-                minValue,
-                maxValue,
-                total,
-                grouping,
-                formatString: dv.values[0].source.format || '',
-            }
-        }
-
-    } catch (error) {
-        console.error('Error in transformData:', error);
-        data = {
-            items: [],
-            minValue: 0,
-            maxValue: 0,
-            total: 0,
-            grouping: [],
-            formatString: '',
-        };
-    } 
-    return data;
-}*/

@@ -34,10 +34,10 @@ export class VisualSettings extends DataViewObjectsParser {
       }
 
     export class waterfallSettings {
-      public defaultColor: string = "99999"
-      public posBarColor: string = "00782E";
-      public negBarColor: string = "B10606";
-      public sumBarColor: string = "003339";
+      public defaultColor: string = "#99999"
+      public posBarColor: string = "#00782E";
+      public negBarColor: string = "#B10606";
+      public sumBarColor: string = "#003339";
       public fontSize: number = 12;
       public fontFamily: string = "Arial, sans-serif"
       public fontColor: string = "#D5D2D2"
@@ -46,5 +46,6 @@ export class VisualSettings extends DataViewObjectsParser {
       public connectorWidth: number = 3;
       public gradientEnabled: boolean = false;
       public lineColor: string = "#D5D2D2"
+      public dataLabel: boolean = false;
      }
 
