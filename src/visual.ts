@@ -129,7 +129,7 @@ export class Visual implements IVisual {
             });
         }
 
-        const {yMin, yMax} = this.adjustMinMaxForAxis(this.data.minValue, this.data.maxValue)
+        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
 
         console.log(this.data.minValue, this.data.maxValue)
         console.log(yMin, yMax)
@@ -138,7 +138,7 @@ export class Visual implements IVisual {
 
         this.defGradients(colors) 
         this.drawXAxis()
-        this.drawYAxis(baseLine, sideMargin, yMin, yMax)
+        this.drawYAxis(baseLine, sideMargin, yMin, yMax, stepSize)
         //this.yValues()
         this.drawCategoryLabels()
         this.drawConnectors(barArray)
@@ -172,32 +172,56 @@ export class Visual implements IVisual {
     
     }
 
-    private calculateRoundingFactor(range) {
-        const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
-        return magnitude * 0.10;
+    private calculateRoundingFactor(range, numSteps) {
+        // här beräknas vad storleken på varje steg 
+        const stepSize = range / numSteps;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(stepSize)));
+        const normalizedStepSize = stepSize / magnitude; // Normalize step size to between 1 and 10
+        let roundedStepSize;
+        if (normalizedStepSize < 1.5) {
+            roundedStepSize = 1;
+        } else if (normalizedStepSize < 3) {
+            roundedStepSize = 2;
+        } else if (normalizedStepSize < 7.5) {
+            roundedStepSize = 5;
+        } else {
+            roundedStepSize = 10;
+        }
+        return roundedStepSize * magnitude; // Scale back to the original magnitude
     }
     
-    private adjustMinMaxForAxis(minValue, maxValue) {
-        const range = maxValue - minValue;
-        const roundingFactor = this.calculateRoundingFactor(range);
-    
-        const yMin = Math.floor(minValue / roundingFactor) * roundingFactor;
-        const yMax = Math.ceil(maxValue / roundingFactor) * roundingFactor;
+    private getMinMaxSteps(minValue, maxValue) {
+        const positiveRange = maxValue > 0 ? maxValue : 0;
+        const negativeRange = minValue < 0 ? Math.abs(minValue) : 0;
+        console.log(positiveRange, negativeRange)
 
-        return { yMin, yMax };
+        const dif = Math.abs(maxValue - minValue)
+
+        const posPerc = maxValue/dif
+
+        const posSteps = Math.ceil(posPerc*10)
+        const negSteps = Math.ceil(10-posPerc*10)
+    
+        const positiveStep = this.calculateRoundingFactor(positiveRange, posSteps );
+        const negativeStep = this.calculateRoundingFactor(negativeRange, negSteps);
+
+        const stepSize = Math.max(positiveStep, negativeStep);
+    
+        // new min max based on largest stepsize
+        const yMin = Math.floor(minValue / stepSize) * stepSize;
+        const yMax = Math.ceil(maxValue / stepSize) * stepSize;
+    
+        console.log("Adjusted Min & Max:", yMin, yMax, "Step Size:", stepSize);
+    
+        return { yMin, yMax, stepSize };
     }
 
-    private drawYAxis(baseline, sideMargin, yMin, yMax) {
-        const yAxis = this.svg.selectAll('line.y-axis').data([0]); // Binding a single-element array
-        const maxDistance = Math.max(Math.abs(yMin), Math.abs(yMax));
-        const numTicks = 10; 
-        const tickStep = Math.ceil(maxDistance / (numTicks / 2)); 
+    private drawYAxis(baseline, sideMargin, yMin, yMax, stepSize) {
+        const yAxis = this.svg.selectAll('line.y-axis').data([0]); 
 
         let tickValues = [];
-        for (let tick = -maxDistance; tick <= maxDistance; tick += tickStep) {
-            if (tick >= yMin && tick <= yMax) {
-                tickValues.push(tick);
-            }
+        for (let value = yMin; value <= yMax; value += stepSize) {
+            tickValues.push(value);
         }
     
         yAxis.enter().append('line')
