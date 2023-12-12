@@ -129,20 +129,22 @@ export class Visual implements IVisual {
             });
         }
 
+        const {yMin, yMax} = this.adjustMinMaxForAxis(this.data.minValue, this.data.maxValue)
+
+        console.log(this.data.minValue, this.data.maxValue)
+        console.log(yMin, yMax)
+
         const sideMargin = this.settings.waterfallSettings.fontSize // tillfällig
 
         this.defGradients(colors) 
         this.drawXAxis()
-        this.drawYAxis(baseLine, sideMargin)
+        this.drawYAxis(baseLine, sideMargin, yMin, yMax)
         //this.yValues()
         this.drawCategoryLabels()
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
         this.drawBars(barArray)
-        const {yMin, yMax} = this.adjustMinMaxForAxis(this.data.minValue, this.data.maxValue)
-
-        console.log(this.data.minValue, this.data.maxValue)
-        console.log(yMin, yMax)
+        
         
     }
 
@@ -171,10 +173,8 @@ export class Visual implements IVisual {
     }
 
     private calculateRoundingFactor(range) {
-        // Determine the order of magnitude of the range
         const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
-        // Calculate 5% of the range's magnitude
-        return magnitude * 0.05;
+        return magnitude * 0.10;
     }
     
     private adjustMinMaxForAxis(minValue, maxValue) {
@@ -187,11 +187,24 @@ export class Visual implements IVisual {
         return { yMin, yMax };
     }
 
-    private drawYAxis(baseline, sideMargin) {
+    private drawYAxis(baseline, sideMargin, yMin, yMax) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); // Binding a single-element array
-        const numTicks = 10; // Adjust the number of ticks as needed
-        const tickStep = (this.data.maxValue - this.data.minValue) / numTicks;
-        const tickValues = Array.from({length: numTicks}, (_, i) => this.data.minValue + i * tickStep);
+        const numTicks = 10; 
+        /*const tickStep = (yMax - yMin) / numTicks;
+        const tickValues = Array.from({length: numTicks}, (_, i) => this.data.minValue + i * tickStep);*/
+
+        let tickValues = [yMin, 0, yMax]; // Start with min, 0, and max
+
+    
+        const tickStep = (yMax - yMin) / (numTicks - 2);
+        for (let i = 1; i < numTicks - 2; i++) {
+            const tick = yMin + i * tickStep;
+            if (tick !== 0 && tick !== yMax) {
+                tickValues.push(tick);
+            }
+        }
+
+        tickValues = tickValues.sort((a, b) => a - b);
     
         yAxis.enter().append('line')
             .classed('y-axis', true)
