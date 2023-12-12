@@ -189,22 +189,16 @@ export class Visual implements IVisual {
 
     private drawYAxis(baseline, sideMargin, yMin, yMax) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); // Binding a single-element array
+        const maxDistance = Math.max(Math.abs(yMin), Math.abs(yMax));
         const numTicks = 10; 
-        /*const tickStep = (yMax - yMin) / numTicks;
-        const tickValues = Array.from({length: numTicks}, (_, i) => this.data.minValue + i * tickStep);*/
+        const tickStep = Math.ceil(maxDistance / (numTicks / 2)); 
 
-        let tickValues = [yMin, 0, yMax]; // Start with min, 0, and max
-
-    
-        const tickStep = (yMax - yMin) / (numTicks - 2);
-        for (let i = 1; i < numTicks - 2; i++) {
-            const tick = yMin + i * tickStep;
-            if (tick !== 0 && tick !== yMax) {
+        let tickValues = [];
+        for (let tick = -maxDistance; tick <= maxDistance; tick += tickStep) {
+            if (tick >= yMin && tick <= yMax) {
                 tickValues.push(tick);
             }
         }
-
-        tickValues = tickValues.sort((a, b) => a - b);
     
         yAxis.enter().append('line')
             .classed('y-axis', true)
