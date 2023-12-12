@@ -45,6 +45,7 @@ import { easeLinear } from "d3-ease"
 import { setStyle } from "./setStyle"
 import { ScalePoint, scalePoint, ScaleLinear, scaleLinear} from "d3-scale";
 import { dataViewWildcard } from "powerbi-visuals-utils-dataviewutils";
+import { min } from "d3";
 
 export class Visual implements IVisual {
     private target: HTMLElement;
@@ -138,6 +139,10 @@ export class Visual implements IVisual {
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
         this.drawBars(barArray)
+        const {yMin, yMax} = this.adjustMinMaxForAxis(this.data.minValue, this.data.maxValue)
+
+        console.log(this.data.minValue, this.data.maxValue)
+        console.log(yMin, yMax)
         
     }
 
@@ -165,6 +170,23 @@ export class Visual implements IVisual {
     
     }
 
+    private calculateRoundingFactor(range) {
+        // Determine the order of magnitude of the range
+        const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
+        // Calculate 5% of the range's magnitude
+        return magnitude * 0.05;
+    }
+    
+    private adjustMinMaxForAxis(minValue, maxValue) {
+        const range = maxValue - minValue;
+        const roundingFactor = this.calculateRoundingFactor(range);
+    
+        const yMin = Math.floor(minValue / roundingFactor) * roundingFactor;
+        const yMax = Math.ceil(maxValue / roundingFactor) * roundingFactor;
+
+        return { yMin, yMax };
+    }
+
     private drawYAxis(baseline, sideMargin) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); // Binding a single-element array
         const numTicks = 10; // Adjust the number of ticks as needed
@@ -177,35 +199,38 @@ export class Visual implements IVisual {
             .attr('y1', 0)
             .attr('x2', sideMargin)
             .attr('y2', baseline);
+
     
         const ticks = this.svg.selectAll('line.y-tick').data(tickValues);
         ticks.enter().append('line')
             .classed('y-tick', true)
-            .attr('x1', sideMargin - 5) // Adjust the length of the tick line if needed
+            .attr('x1', sideMargin - 5) // length of tick
             .attr('y1', d => this.scaleY(d))
             .attr('x2', sideMargin)
             .attr('y2', d => this.scaleY(d))
         
         ticks.transition(this.transition)
-            .attr('x1', sideMargin - 5) // Adjust the length of the tick line if needed
+            .attr('x1', sideMargin - 5) 
             .attr('y1', d => this.scaleY(d))
             .attr('x2', sideMargin)
             .attr('y2', d => this.scaleY(d))
+
     
         const tickLabels = this.svg.selectAll('text.y-tick-label').data(tickValues);
         tickLabels.enter().append('text')
             .classed('y-tick-label', true)
-            .attr('x', sideMargin - 10) // Adjust position of the label if needed
+            .attr('x', sideMargin) // Adjust position of the label if needed
             .attr('y', d => this.scaleY(d))
             .text(d => d)
             .style('fill', this.settings.waterfallSettings.fontColor)
         
         tickLabels.transition(this.transition)
-            .attr('x', sideMargin - 10) // Adjust position of the label if needed
+            .attr('x', sideMargin) // Adjust position of the label if needed
             .attr('y', d => this.scaleY(d))
             .text(d => d)
             .style('fill', this.settings.waterfallSettings.fontColor)
     
+
         yAxis.exit().remove();
         ticks.exit().remove();
         tickLabels.exit().remove();
