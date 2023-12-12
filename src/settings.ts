@@ -41,9 +41,9 @@ export class VisualSettings extends DataViewObjectsParser {
       public fontSize: number = 12;
       public fontFamily: string = "Arial, sans-serif"
       public fontColor: string = "#D5D2D2"
-      public lineWidth: number = 3;
+      public lineWidth: number = 1;
       public barWidth: number = 40;
-      public connectorWidth: number = 3;
+      public connectorWidth: number = 1;
       public gradientEnabled: boolean = false;
       public lineColor: string = "#D5D2D2"
       public dataLabel: boolean = false;

@@ -78,7 +78,6 @@ export class Visual implements IVisual {
         this.data = transformData(options, colors)
         console.log("this.data", this.data)
         
-
         setStyle(this.settings)
         this.dim = [options.viewport.width, options.viewport.height]
         this.svg.attr('width', this.dim[0])   
@@ -134,7 +133,7 @@ export class Visual implements IVisual {
         this.defGradients(colors) 
         this.drawXAxis()
         this.drawYAxis(baseLine, sideMargin)
-        this.yValues()
+        //this.yValues()
         this.drawCategoryLabels()
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
@@ -167,39 +166,51 @@ export class Visual implements IVisual {
     }
 
     private drawYAxis(baseline, sideMargin) {
-        const yAxis = this.svg.selectAll('line.y-axis').data([0]) // Binding a single-element array
-          
+        const yAxis = this.svg.selectAll('line.y-axis').data([0]); // Binding a single-element array
+        const numTicks = 10; // Adjust the number of ticks as needed
+        const tickStep = (this.data.maxValue - this.data.minValue) / numTicks;
+        const tickValues = Array.from({length: numTicks}, (_, i) => this.data.minValue + i * tickStep);
+    
         yAxis.enter().append('line')
             .classed('y-axis', true)
-            .attr('x1',sideMargin)
+            .attr('x1', sideMargin)
             .attr('y1', 0)
-            .attr('x2', sideMargin )
-            .attr('y2', baseline)
-
-        yAxis.transition(this.transition)
-            .attr('x1',sideMargin)
-            .attr('y1', 0)
-            .attr('x2', sideMargin )
-            .attr('y2', baseline)
+            .attr('x2', sideMargin)
+            .attr('y2', baseline);
+    
+        const ticks = this.svg.selectAll('line.y-tick').data(tickValues);
+        ticks.enter().append('line')
+            .classed('y-tick', true)
+            .attr('x1', sideMargin - 5) // Adjust the length of the tick line if needed
+            .attr('y1', d => this.scaleY(d))
+            .attr('x2', sideMargin)
+            .attr('y2', d => this.scaleY(d))
         
-        yAxis.exit().remove()
-    }
-
-    private yValues() {
-        const yValues = this.svg.selectAll('text.y-val').data(this.data.items)
-
-        yValues.enter().append('text')
-            .classed('data-label', true)
-            .attr('x', d => this.scaleX(d.category))
-            .attr('y', (d,i) => {
-                let yPos = 0
-
-                return yPos
-            })
-            .text(d => d.value)
+        ticks.transition(this.transition)
+            .attr('x1', sideMargin - 5) // Adjust the length of the tick line if needed
+            .attr('y1', d => this.scaleY(d))
+            .attr('x2', sideMargin)
+            .attr('y2', d => this.scaleY(d))
+    
+        const tickLabels = this.svg.selectAll('text.y-tick-label').data(tickValues);
+        tickLabels.enter().append('text')
+            .classed('y-tick-label', true)
+            .attr('x', sideMargin - 10) // Adjust position of the label if needed
+            .attr('y', d => this.scaleY(d))
+            .text(d => d)
             .style('fill', this.settings.waterfallSettings.fontColor)
-
+        
+        tickLabels.transition(this.transition)
+            .attr('x', sideMargin - 10) // Adjust position of the label if needed
+            .attr('y', d => this.scaleY(d))
+            .text(d => d)
+            .style('fill', this.settings.waterfallSettings.fontColor)
+    
+        yAxis.exit().remove();
+        ticks.exit().remove();
+        tickLabels.exit().remove();
     }
+  
 
     private drawBars(barArray){
     
@@ -244,8 +255,6 @@ export class Visual implements IVisual {
     }
 
     private drawConnectors(barArray) {
-        console.log(barArray)
-        
         const connectors = this.svg.selectAll('line.connectors').data(this.data.items);
 
         const barWidth =  this.settings.waterfallSettings.barWidth
@@ -269,6 +278,8 @@ export class Visual implements IVisual {
                                 ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
                                 : this.scaleX(d.category) + barWidth / 2)
             .attr('y2', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
+
+            
 
         connectors.exit().remove();        
     }
@@ -346,7 +357,6 @@ export class Visual implements IVisual {
             const gradientId = `${type}-gradient`;
             const barColor = colors[index];
             const lighterColor = this.lightenColor(barColor, 25);
-            console.log(gradientId, barColor, lighterColor)
     
             let gradient = this.svg.select(`#${gradientId}`);
             if (gradient.empty()) {
@@ -361,7 +371,6 @@ export class Visual implements IVisual {
                 gradient.append("stop").attr("offset", "30%").attr("stop-color", barColor);
                 gradient.append("stop").attr("offset", "100%").attr("stop-color", lighterColor);
             }
-            console.log("gradient", gradient)
         })
         
     }
@@ -416,15 +425,15 @@ export class Visual implements IVisual {
                         negBarColor: this.settings.waterfallSettings.negBarColor
                     },
                     selector: null
-                }),
+                }),/*
                 objectEnumeration.push ({
                     objectName,
                     properties: {
                         sumBarColor: this.settings.waterfallSettings.sumBarColor
                     },
                     selector: null
-                }),
-               /* objectEnumeration.push ({    //   -------------------------------- update if FX color needed
+                }),*/
+                objectEnumeration.push ({    //   -------------------------------- update if FX color needed
                     objectName,
                     properties: {
                         sumBarColor: this.settings.waterfallSettings.sumBarColor
@@ -435,7 +444,7 @@ export class Visual implements IVisual {
                     propertyInstanceKind: { // Detta är vad som blir "fx knappen" conditional formatting 
                         sumBarColor: VisualEnumerationInstanceKinds.ConstantOrRule  /// Här defineras det om färgen ska vara solid eller enligt field view. Gradient fungerar inte 
                     }
-                }),*/
+                }),
                 objectEnumeration.push ({
                     objectName,
                     properties: {
