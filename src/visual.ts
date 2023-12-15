@@ -36,6 +36,8 @@ import VisualEnumerationInstanceKinds = powerbi.VisualEnumerationInstanceKinds;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost
 import DataView = powerbi.DataView;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
+import {valueFormatter, textMeasurementService} from "powerbi-visuals-utils-formattingutils";
+import measureSvgTextWidth = textMeasurementService.measureSvgTextWidth;
 
 import { Selection, select, selectAll, BaseType} from "d3-selection";
 import { VisualSettings } from "./settings";
@@ -45,7 +47,6 @@ import { easeLinear } from "d3-ease"
 import { setStyle } from "./setStyle"
 import { ScalePoint, scalePoint, ScaleLinear, scaleLinear} from "d3-scale";
 import { dataViewWildcard } from "powerbi-visuals-utils-dataviewutils";
-import { min } from "d3";
 
 export class Visual implements IVisual {
     private target: HTMLElement;
@@ -74,8 +75,6 @@ export class Visual implements IVisual {
             this.settings.waterfallSettings.negBarColor, 
             this.settings.waterfallSettings.sumBarColor];
 
-        console.log(colors)
-
         this.data = transformData(options, colors)
         console.log("this.data", this.data)
         
@@ -84,9 +83,13 @@ export class Visual implements IVisual {
         this.svg.attr('width', this.dim[0])   
         this.svg.attr('height', this.dim[1])
 
+        const targetLabelWidth = this.getTextWidth(this.formatMeasure(this.data.maxValue, this.data.formatString))
+       // const margin = Math.max(targetLabelWidth, this.settings.waterfallSettings.barWidth/3)
+
+       const margin = this.settings.waterfallSettings.barWidth/3
         this.scaleX = scalePoint()
             .domain(Array.from(this.data.items, d => d.category))
-            .range([0, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
+            .range([margin, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
             .padding(0.5)
     
         const baseLine = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth/2   // ----------------------- FÖRBÄTTRA -----------------------------------
@@ -134,12 +137,11 @@ export class Visual implements IVisual {
         console.log(this.data.minValue, this.data.maxValue)
         console.log(yMin, yMax)
 
-        const sideMargin = this.settings.waterfallSettings.fontSize // tillfällig
+        //const sideMargin = targetLabelWidth  // tillfällig
 
         this.defGradients(colors) 
         this.drawXAxis()
-        this.drawYAxis(baseLine, sideMargin, yMin, yMax, stepSize)
-        //this.yValues()
+        this.drawYAxis(baseLine, margin, yMin, yMax, stepSize)
         this.drawCategoryLabels()
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
@@ -452,6 +454,20 @@ export class Visual implements IVisual {
         this.padHex(Math.round(r).toString(16)) +
         this.padHex(Math.round(g).toString(16)) +
         this.padHex(Math.round(b).toString(16));
+    }
+
+    private formatMeasure(measure: Number, fs: string): string { // :string definerar att det vi returnerar är en sträng
+        const formatter = valueFormatter.create({format: fs})
+        return formatter.format(measure)
+    }
+
+    private getTextWidth(txt: string): number {
+        const textProperties = {
+            text: txt,
+            fontFamily: this.settings.waterfallSettings.fontFamily,
+            fontSize: `${this.settings.waterfallSettings.fontSize}pt`
+        }
+        return measureSvgTextWidth(textProperties)
     }
 
     /**
