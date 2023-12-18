@@ -134,6 +134,12 @@
                     "type": {
                         "bool": true
                     }
+                },
+                "hideStart": {
+                    "displayName": "Hide start",
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         }

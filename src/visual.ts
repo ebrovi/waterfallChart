@@ -83,10 +83,10 @@ export class Visual implements IVisual {
         this.svg.attr('width', this.dim[0])   
         this.svg.attr('height', this.dim[1])
 
-        const targetLabelWidth = this.getTextWidth(this.formatMeasure(this.data.maxValue, this.data.formatString))
-       // const margin = Math.max(targetLabelWidth, this.settings.waterfallSettings.barWidth/3)
+        const maxLen = this.getTextWidth(this.formatMeasure(this.data.maxValue, this.data.formatString)) * 1.5
+        const minLen = this.getTextWidth(this.formatMeasure(this.data.minValue, this.data.formatString)) * 1.5
+        const margin = Math.max(maxLen, minLen)
 
-       const margin = this.settings.waterfallSettings.barWidth/3
         this.scaleX = scalePoint()
             .domain(Array.from(this.data.items, d => d.category))
             .range([margin, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
@@ -100,6 +100,10 @@ export class Visual implements IVisual {
 
         this.transition = transition().duration(500).ease(easeLinear)
 
+        const hideStart = this.settings.waterfallSettings.hideStart
+
+        console.log("hidestart", hideStart)
+
         interface barObject {
             startY: number,
             dir: number,
@@ -109,11 +113,13 @@ export class Visual implements IVisual {
         let prevH = this.scaleY(0);
         let cumulative = 0 
         let barArray: barObject[] = []; 
+        let firstType2 = 0;
 
         for (let i = 0; i < this.data.items.length; i++) {
             const currentItem = this.data.items[i];
             let height = Math.abs(this.scaleY(0) - this.scaleY(currentItem.value));
             let startY;
+            console.log(firstType2)
         
             if (currentItem.type < 2) {
                 startY = (currentItem.value < 0) ? prevH : prevH - height;
@@ -123,24 +129,34 @@ export class Visual implements IVisual {
                 startY = currentItem.value < 0
                          ? this.scaleY(0) 
                          : this.scaleY(cumulative);
+                firstType2 += 1;
             }
-        
-            barArray.push({
-                startY: startY,
-                dir: currentItem.value < 0 ? -1 : 1,
-                value: height
-            });
+
+            if (hideStart === true)  {
+                if (firstType2 > 0) {
+                    barArray.push({
+                        startY: startY,
+                        dir: currentItem.value < 0 ? -1 : 1,
+                        value: height
+                    });
+                }
+                else console.log("skip")
+            }
+
+            else {
+                barArray.push({
+                    startY: startY,
+                    dir: currentItem.value < 0 ? -1 : 1,
+                    value: height
+                });
+            }
         }
+        console.log(barArray)
 
         const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
 
-        console.log(this.data.minValue, this.data.maxValue)
-        console.log(yMin, yMax)
-
-        //const sideMargin = targetLabelWidth  // tillfällig
-
         this.defGradients(colors) 
-        this.drawXAxis()
+        this.drawXAxis(margin)
         this.drawYAxis(baseLine, margin, yMin, yMax, stepSize)
         this.drawCategoryLabels()
         this.drawConnectors(barArray)
@@ -154,18 +170,18 @@ export class Visual implements IVisual {
         return <VisualSettings>VisualSettings.parse(dataView);
     }
 
-    private drawXAxis() {
+    private drawXAxis(sideMargin) {
         const xAxis = this.svg.selectAll('line.x-axis').data([0]) // Binding a single-element array
           
         xAxis.enter().append('line')
             .classed('x-axis', true)
-            .attr('x1',0)
+            .attr('x1', sideMargin)
             .attr('y1', this.scaleY(0))
             .attr('x2', this.scaleX.range()[1] )
             .attr('y2', this.scaleY(0))
 
         xAxis.transition(this.transition)
-            .attr('x1',0)
+            .attr('x1', sideMargin)
             .attr('y1', this.scaleY(0))
             .attr('x2', this.scaleX.range()[1] )
             .attr('y2', this.scaleY(0))
@@ -232,8 +248,13 @@ export class Visual implements IVisual {
             .attr('y1', 0)
             .attr('x2', sideMargin)
             .attr('y2', baseline);
+        
+        yAxis.transition(this.transition)
+            .attr('x1', sideMargin)
+            .attr('y1', 0)
+            .attr('x2', sideMargin)
+            .attr('y2', baseline);
 
-    
         const ticks = this.svg.selectAll('line.y-tick').data(tickValues);
         ticks.enter().append('line')
             .classed('y-tick', true)
@@ -252,13 +273,13 @@ export class Visual implements IVisual {
         const tickLabels = this.svg.selectAll('text.y-tick-label').data(tickValues);
         tickLabels.enter().append('text')
             .classed('y-tick-label', true)
-            .attr('x', sideMargin) // Adjust position of the label if needed
+            .attr('x', 0) 
             .attr('y', d => this.scaleY(d))
             .text(d => d)
             .style('fill', this.settings.waterfallSettings.fontColor)
         
         tickLabels.transition(this.transition)
-            .attr('x', sideMargin) // Adjust position of the label if needed
+            .attr('x', 0) 
             .attr('y', d => this.scaleY(d))
             .text(d => d)
             .style('fill', this.settings.waterfallSettings.fontColor)
@@ -453,6 +474,7 @@ export class Visual implements IVisual {
         return "#" + 
         this.padHex(Math.round(r).toString(16)) +
         this.padHex(Math.round(g).toString(16)) +
+        
         this.padHex(Math.round(b).toString(16));
     }
 
@@ -497,15 +519,15 @@ export class Visual implements IVisual {
                         negBarColor: this.settings.waterfallSettings.negBarColor
                     },
                     selector: null
-                }),/*
+                }),
                 objectEnumeration.push ({
                     objectName,
                     properties: {
                         sumBarColor: this.settings.waterfallSettings.sumBarColor
                     },
                     selector: null
-                }),*/
-                objectEnumeration.push ({    //   -------------------------------- update if FX color needed
+                }),
+                /*objectEnumeration.push ({    //   -------------------------------- update if FX color needed
                     objectName,
                     properties: {
                         sumBarColor: this.settings.waterfallSettings.sumBarColor
@@ -516,18 +538,20 @@ export class Visual implements IVisual {
                     propertyInstanceKind: { // Detta är vad som blir "fx knappen" conditional formatting 
                         sumBarColor: VisualEnumerationInstanceKinds.ConstantOrRule  /// Här defineras det om färgen ska vara solid eller enligt field view. Gradient fungerar inte 
                     }
-                }),
+                }),*/
                 objectEnumeration.push ({
                     objectName,
                     properties: {
                         gradientEnabled: this.settings.waterfallSettings.gradientEnabled,
+                        barWidth: this.settings.waterfallSettings.barWidth,
                         lineWidth: this.settings.waterfallSettings.lineWidth,
                         fontSize: this.settings.waterfallSettings.fontSize,
                         fontFamily: this.settings.waterfallSettings.fontFamily,
                         fontColor: this.settings.waterfallSettings.fontColor,
                         connectorWidth: this.settings.waterfallSettings.connectorWidth,
                         lineColor: this.settings.waterfallSettings.lineColor,
-                        dataLabel: this.settings.waterfallSettings.dataLabel
+                        dataLabel: this.settings.waterfallSettings.dataLabel,
+                        hideStart: this.settings.waterfallSettings.hideStart
                     },
                     selector: null
                 })

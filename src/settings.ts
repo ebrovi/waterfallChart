@@ -47,5 +47,6 @@ export class VisualSettings extends DataViewObjectsParser {
       public gradientEnabled: boolean = false;
       public lineColor: string = "#D5D2D2"
       public dataLabel: boolean = false;
+      public hideStart: boolean = false;
      }
 
