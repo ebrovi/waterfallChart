@@ -74,8 +74,10 @@ export class Visual implements IVisual {
             this.settings.waterfallSettings.posBarColor, 
             this.settings.waterfallSettings.negBarColor, 
             this.settings.waterfallSettings.sumBarColor];
+        
+        const hideStart = this.settings.waterfallSettings.hideStart
 
-        this.data = transformData(options, colors)
+        this.data = transformData(options, colors, hideStart)
         console.log("this.data", this.data)
         
         setStyle(this.settings)
@@ -100,7 +102,7 @@ export class Visual implements IVisual {
 
         this.transition = transition().duration(500).ease(easeLinear)
 
-        const hideStart = this.settings.waterfallSettings.hideStart
+        //const hideStart = this.settings.waterfallSettings.hideStart
 
         console.log("hidestart", hideStart)
 
@@ -132,24 +134,12 @@ export class Visual implements IVisual {
                 firstType2 += 1;
             }
 
-            if (hideStart === true)  {
-                if (firstType2 > 0) {
-                    barArray.push({
-                        startY: startY,
-                        dir: currentItem.value < 0 ? -1 : 1,
-                        value: height
-                    });
-                }
-                else console.log("skip")
-            }
+            barArray.push({
+                startY: startY,
+                dir: currentItem.value < 0 ? -1 : 1,
+                value: height
+            });
 
-            else {
-                barArray.push({
-                    startY: startY,
-                    dir: currentItem.value < 0 ? -1 : 1,
-                    value: height
-                });
-            }
         }
         console.log(barArray)
 
@@ -474,7 +464,7 @@ export class Visual implements IVisual {
         return "#" + 
         this.padHex(Math.round(r).toString(16)) +
         this.padHex(Math.round(g).toString(16)) +
-        
+
         this.padHex(Math.round(b).toString(16));
     }
 

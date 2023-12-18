@@ -104,7 +104,7 @@ export interface VDataItem {
     color: string
 }
 
-export function transformData(options: VisualUpdateOptions, barColors: string[]): VData { // 3 dif colors
+export function transformData(options: VisualUpdateOptions, barColors: string[], hideStart: boolean): VData { // 3 dif colors
     let data: VData;
 
     try {
@@ -115,7 +115,9 @@ export function transformData(options: VisualUpdateOptions, barColors: string[])
         
         const items: VDataItem[] = [];
         const grouping: VDataItem[] = [];
-
+        let skip;
+        hideStart === true ? skip = 0 : skip = 1
+        
         for (let i = 0; i < dv.values.length; i++) {
             for (let u = 0; u < dv.categories[0].values.length; u++) {
                 const value = dv.values[i].values[u];
@@ -128,22 +130,26 @@ export function transformData(options: VisualUpdateOptions, barColors: string[])
                     let colorIndex = value > 0 ? 0 : 1
                     let color = barColors[colorIndex] 
 
-                    items.push({
-                        category: <string>dv.categories[0].values[u],
-                        value: <number>value,
-                        type: <number> value > 0 ? 1 : -1, // 1 for value,
-                        color: color
-                    })
+                    if (skip > 0) {
+                        items.push({
+                            category: <string>dv.categories[0].values[u],
+                            value: <number>value,
+                            type: <number> value > 0 ? 1 : -1, // bestämmer färg senare
+                            color: color
+                        })
+                    }                    
                 }
             }
 
             let sumColor = barColors[2]
+            skip +=1;
             items.push({
                 category: <string>dv.values[i].source.groupName,
                 value: <number>total,
                 type: <number> 2, // 2 for cumulative total
                 color: sumColor,
             })
+            
         }
 
         data = {
