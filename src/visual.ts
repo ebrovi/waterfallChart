@@ -102,8 +102,6 @@ export class Visual implements IVisual {
 
         this.transition = transition().duration(500).ease(easeLinear)
 
-        //const hideStart = this.settings.waterfallSettings.hideStart
-
         console.log("hidestart", hideStart)
 
         interface barObject {
@@ -113,25 +111,23 @@ export class Visual implements IVisual {
         }
 
         let prevH = this.scaleY(0);
-        let cumulative = 0 
         let barArray: barObject[] = []; 
-        let firstType2 = 0;
 
         for (let i = 0; i < this.data.items.length; i++) {
             const currentItem = this.data.items[i];
             let height = Math.abs(this.scaleY(0) - this.scaleY(currentItem.value));
             let startY;
-            console.log(firstType2)
         
             if (currentItem.type < 2) {
                 startY = (currentItem.value < 0) ? prevH : prevH - height;
                 prevH += (currentItem.value < 0) ? height : - height;
-                cumulative += currentItem.value;
             } else if (currentItem.type === 2) {
                 startY = currentItem.value < 0
                          ? this.scaleY(0) 
-                         : this.scaleY(cumulative);
-                firstType2 += 1;
+                         : this.scaleY(currentItem.value);
+                if (i === 0) {
+                    prevH += (currentItem.value < 0) ? height : - height;
+                }
             }
 
             barArray.push({
