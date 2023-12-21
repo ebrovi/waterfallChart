@@ -5,9 +5,9 @@
         "guid": "waterfallChartEB4B4595C4364CD4BE27731AD680350C",
         "visualClassName": "Visual",
         "version": "1.0.0",
-        "description": "",
-        "supportUrl": "",
-        "gitHubUrl": ""
+        "description": "Waterfall chart with multiple part sums",
+        "supportUrl": "N/A",
+        "gitHubUrl": "N/A"
     },
     "apiVersion": "4.7.0",
     "author": {
@@ -23,3 +23,4 @@
     "dependencies": null,
     "stringResources": []
 }
+
