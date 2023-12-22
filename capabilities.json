@@ -82,7 +82,7 @@
                     }
                 },
                  "fontSize": {
-                    "displayName": "Text Size",
+                    "displayName": "Font Size",
                     "type": {
                         "formatting": {
                             "fontSize": true
@@ -99,6 +99,32 @@
                 },
                 "fontColor":{
                     "displayName": "Font Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                 "dataFontSize": {
+                    "displayName": "Data Font Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "dataFontFamily":{
+                    "displayName": "Data Font Family",
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "dataFontColor":{
+                    "displayName": "Data Font Color",
                     "type": {
                         "fill": {
                             "solid": {

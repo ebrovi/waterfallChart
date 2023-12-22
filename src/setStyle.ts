@@ -14,5 +14,8 @@ export function setStyle(settings: VisualSettings): void {
     style.setProperty('--font-color', settings.waterfallSettings.fontColor),
     style.setProperty('--line-width', `${settings.waterfallSettings.lineWidth}`),
     style.setProperty('--connector-width', `${settings.waterfallSettings.connectorWidth}`),
-    style.setProperty('--line-color', settings.waterfallSettings.lineColor)
+    style.setProperty('--line-color', settings.waterfallSettings.lineColor),
+    style.setProperty('--data-font-family', settings.waterfallSettings.dataFontFamily),
+    style.setProperty('--data-font-size', `${settings.waterfallSettings.dataFontSize}pt`),
+    style.setProperty('--data-font-color', settings.waterfallSettings.dataFontColor)
 } 

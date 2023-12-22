@@ -352,7 +352,7 @@ export class Visual implements IVisual {
     private drawDataLabel(barArray) {
         const dataLabel = this.svg.selectAll('text.data-label').data(this.data.items)
 
-        const margin = this.settings.waterfallSettings.fontSize/2
+        const margin = this.settings.waterfallSettings.dataFontSize/2
 
         dataLabel.enter().append('text')
             .classed('data-label', true)
@@ -367,7 +367,7 @@ export class Visual implements IVisual {
                     return d.value
                 }
             })
-            .style('fill', this.settings.waterfallSettings.fontColor)
+            .style('fill', this.settings.waterfallSettings.dataFontColor)
 
         dataLabel.transition(this.transition)
             .attr('x', d => this.scaleX(d.category))
@@ -382,7 +382,7 @@ export class Visual implements IVisual {
                     return d.value
                 }
             })
-            .style('fill', this.settings.waterfallSettings.fontColor)
+            .style('fill', this.settings.waterfallSettings.dataFontColor)
 
         dataLabel.exit().remove();     
     }
@@ -537,6 +537,9 @@ export class Visual implements IVisual {
                         connectorWidth: this.settings.waterfallSettings.connectorWidth,
                         lineColor: this.settings.waterfallSettings.lineColor,
                         dataLabel: this.settings.waterfallSettings.dataLabel,
+                        dataFontSize: this.settings.waterfallSettings.dataFontSize,
+                        dataFontFamily: this.settings.waterfallSettings.dataFontFamily,
+                        dataFontColor: this.settings.waterfallSettings.dataFontColor,
                         hideStart: this.settings.waterfallSettings.hideStart
                     },
                     selector: null

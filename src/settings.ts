@@ -38,7 +38,7 @@ export class VisualSettings extends DataViewObjectsParser {
       public posBarColor: string = "#00782E";
       public negBarColor: string = "#B10606";
       public sumBarColor: string = "#003339";
-      public fontSize: number = 12;
+      public fontSize: number = 10;
       public fontFamily: string = "Arial, sans-serif"
       public fontColor: string = "#D5D2D2"
       public lineWidth: number = 1;
@@ -48,5 +48,8 @@ export class VisualSettings extends DataViewObjectsParser {
       public lineColor: string = "#D5D2D2"
       public dataLabel: boolean = false;
       public hideStart: boolean = false;
+      public dataFontSize: number = 12;
+      public dataFontFamily: string = "Arial, sans-serif"
+      public dataFontColor: string = "#433F72"
      }
 
