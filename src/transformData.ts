@@ -51,7 +51,7 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
                     
                     hideStart === true ? 
                         skip < 1 ?
-                            (minValue = value, maxValue = value )
+                            (minValue = Math.min(value, 0), maxValue = Math.max(value, 0) )
                             : (minValue = Math.min(minValue, total), maxValue = Math.max(maxValue, total))
                         : (minValue = Math.min(minValue, total), maxValue = Math.max(maxValue, total))
 
@@ -69,6 +69,7 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
                 }
             }
             console.log("total",total)
+            //total < 0 ? (minValue = Math.min(minValue, total), maxValue = 0) : ( maxValue = Math.max(maxValue, total))  
             minValue = Math.min(minValue, total)
             maxValue = Math.max(maxValue, total)
 

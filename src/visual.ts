@@ -97,7 +97,7 @@ export class Visual implements IVisual {
         const baseLine = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth/2   // ----------------------- FÖRBÄTTRA -----------------------------------
 
         this.scaleY = scaleLinear()
-            .domain([this.data.minValue, this.data.maxValue])
+            .domain([this.data.minValue, this.data.maxValue + this.settings.waterfallSettings.fontSize])
             .range([baseLine - this.settings.waterfallSettings.lineWidth- this.settings.waterfallSettings.fontSize * 2, this.settings.waterfallSettings.fontSize * 2.5]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
@@ -382,7 +382,7 @@ export class Visual implements IVisual {
                     return d.value
                 }
             })
-            .style('fill', this.settings.waterfallSettings.dataFontColor)
+            .style('fill', this.settings.waterfallSettings.fontColor)
 
         dataLabel.exit().remove();     
     }
