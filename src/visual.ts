@@ -327,22 +327,22 @@ export class Visual implements IVisual {
     
         connectors.enter().append('line')
             .classed('connectors', true)
-            .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2 )
+            .attr('x1', (d, i) => this.scaleX(d.category) - barWidth / 2 )
             .attr('y1', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
             .attr('x2', (d, i) => 
                             i < (barArray.length - 1)
-                                ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
-                                : this.scaleX(d.category) + barWidth / 2)
+                                ? this.scaleX(this.data.items[i+1].category)+barWidth/2 
+                                : this.scaleX(d.category) - barWidth / 2)
             .attr('y2', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
 
         connectors.transition(this.transition)
-            .attr('x1', (d, i) => this.scaleX(d.category) + barWidth / 2 )
-            .attr('y1', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
-            .attr('x2', (d, i) => 
-                            i < (barArray.length - 1)
-                                ? this.scaleX(this.data.items[i+1].category)-barWidth / 2
-                                : this.scaleX(d.category) + barWidth / 2)
-            .attr('y2', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
+        .attr('x1', (d, i) => this.scaleX(d.category) - barWidth / 2 )
+        .attr('y1', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
+        .attr('x2', (d, i) => 
+                        i < (barArray.length - 1)
+                            ? this.scaleX(this.data.items[i+1].category)+barWidth/2 
+                            : this.scaleX(d.category) - barWidth / 2)
+        .attr('y2', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
 
             
 
