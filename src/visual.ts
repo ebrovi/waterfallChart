@@ -94,11 +94,11 @@ export class Visual implements IVisual {
             .range([margin, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
             .padding(0.5)
     
-        const baseLine = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth/2   // ----------------------- FÖRBÄTTRA -----------------------------------
+        const baseLine = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth    // ----------------------- FÖRBÄTTRA -----------------------------------
 
         this.scaleY = scaleLinear()
             .domain([this.data.minValue, this.data.maxValue + this.settings.waterfallSettings.fontSize])
-            .range([baseLine - this.settings.waterfallSettings.lineWidth- this.settings.waterfallSettings.fontSize * 2, this.settings.waterfallSettings.fontSize * 2.5]) // so bars dont go over categories
+            .range([baseLine - this.settings.waterfallSettings.dataFontSize*2.5, this.settings.waterfallSettings.fontSize + this.settings.waterfallSettings.dataFontSize*2.5]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
 
@@ -139,7 +139,7 @@ export class Visual implements IVisual {
         }
         console.log(barArray)
 
-        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
+        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue, baseLine)
 
         this.defGradients(colors) 
         this.drawXAxis(margin)
@@ -194,20 +194,23 @@ export class Visual implements IVisual {
         return roundedStepSize * magnitude; // Scale back to the original magnitude
     }
     
-    private getMinMaxSteps(minValue, maxValue) {
+    private getMinMaxSteps(minValue, maxValue, baseLine) {
         const positiveRange = maxValue > 0 ? maxValue : 0;
         const negativeRange = minValue < 0 ? Math.abs(minValue) : 0;
-        console.log(positiveRange, negativeRange)
+        console.log("range",positiveRange, negativeRange)
 
         const dif = Math.abs(maxValue - minValue)
+        console.log("dif",dif)
 
-        const posPerc = maxValue/dif
+        const posPerc = (maxValue+0.01)/dif // +0.01 if maxValue = 0
 
         const posSteps = Math.ceil(posPerc*10)
-        const negSteps = Math.ceil(10-posPerc*10)
+        const negSteps = Math.ceil(10-posPerc*10+0.01)
+        console.log(posSteps,negSteps)
     
         const positiveStep = this.calculateRoundingFactor(positiveRange, posSteps );
         const negativeStep = this.calculateRoundingFactor(negativeRange, negSteps);
+        console.log("step",positiveStep, negativeStep)
 
         const stepSize = Math.max(positiveStep, negativeStep);
     
@@ -227,17 +230,18 @@ export class Visual implements IVisual {
         for (let value = yMin; value <= yMax; value += stepSize) {
             tickValues.push(value);
         }
+        console.log(tickValues)
     
         yAxis.enter().append('line')
             .classed('y-axis', true)
             .attr('x1', sideMargin)
-            .attr('y1', 0)
+            .attr('y1', this.settings.waterfallSettings.fontSize)
             .attr('x2', sideMargin)
             .attr('y2', baseline);
         
         yAxis.transition(this.transition)
             .attr('x1', sideMargin)
-            .attr('y1', 0)
+            .attr('y1', this.settings.waterfallSettings.fontSize)
             .attr('x2', sideMargin)
             .attr('y2', baseline);
 
@@ -245,28 +249,58 @@ export class Visual implements IVisual {
         ticks.enter().append('line')
             .classed('y-tick', true)
             .attr('x1', sideMargin - 5) // length of tick
-            .attr('y1', d => this.scaleY(d))
+            .attr('y1', d => {
+                const pos = this.scaleY(d)
+                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
+                    return pos 
+                }
+               })
             .attr('x2', sideMargin)
-            .attr('y2', d => this.scaleY(d))
+            .attr('y2', d => {
+                const pos = this.scaleY(d)
+                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
+                    return pos 
+                }
+               })
         
         ticks.transition(this.transition)
-            .attr('x1', sideMargin - 5) 
-            .attr('y1', d => this.scaleY(d))
+            .attr('x1', sideMargin - 5) // length of tick
+            .attr('y1', d => {
+                const pos = this.scaleY(d)
+                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
+                    return pos 
+                }
+            })
             .attr('x2', sideMargin)
-            .attr('y2', d => this.scaleY(d))
+            .attr('y2', d => {
+                const pos = this.scaleY(d)
+                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
+                    return pos 
+                }
+            })
 
     
         const tickLabels = this.svg.selectAll('text.y-tick-label').data(tickValues);
         tickLabels.enter().append('text')
             .classed('y-tick-label', true)
             .attr('x', 0) 
-            .attr('y', d => this.scaleY(d))
+            .attr('y',  d => {
+                const pos = this.scaleY(d)
+                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
+                    return pos 
+                }
+               })
             .text(d => d)
             .style('fill', this.settings.waterfallSettings.fontColor)
         
         tickLabels.transition(this.transition)
             .attr('x', 0) 
-            .attr('y', d => this.scaleY(d))
+            .attr('y',  d => {
+                const pos = this.scaleY(d)
+                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
+                    return pos 
+                }
+            })
             .text(d => d)
             .style('fill', this.settings.waterfallSettings.fontColor)
     
