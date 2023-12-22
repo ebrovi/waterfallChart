@@ -4,6 +4,7 @@ import powerbi from "powerbi-visuals-api"
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions
 import IVisualHost = powerbi.extensibility.visual.IVisualHost
 import ISelectionId = powerbi.extensibility.ISelectionId
+import { max } from "d3"
 
 
 export interface VData {
@@ -42,21 +43,27 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
                 const value = dv.values[i].values[u];
 
                 if (typeof value === "number" && !isNaN(value)) {
-                    total += value;
-                    minValue = Math.min(minValue, total, value);
-                    maxValue = Math.max(maxValue, total, value);
-
+                    
                     let colorIndex = value > 0 ? 0 : 1
                     let color = barColors[colorIndex] 
+                    
+                    hideStart === true ? 
+                        skip < 1 ?
+                            (minValue = total, maxValue = total )
+                            : (minValue = Math.min(minValue, total), maxValue = Math.max(maxValue, total))
+                        : (minValue = Math.min(minValue, total), maxValue = Math.max(maxValue, total))
 
-                    if (skip > 0) {
+                    total += value;
+
+                    if (skip > 0) {    // om hideStart är true så kommer inte första värdena att pushas
+                        
                         items.push({
                             category: <string>dv.categories[0].values[u],
                             value: <number>value,
                             type: <number> value > 0 ? 1 : -1, // bestämmer färg senare
                             color: color
                         })
-                    }                    
+                    }  
                 }
             }
 
@@ -68,7 +75,6 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
                 type: <number> 2, // 2 for cumulative total
                 color: sumColor,
             })
-            
         }
 
         data = {
