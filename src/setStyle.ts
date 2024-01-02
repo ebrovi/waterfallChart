@@ -17,5 +17,7 @@ export function setStyle(settings: VisualSettings): void {
     style.setProperty('--line-color', settings.waterfallSettings.lineColor),
     style.setProperty('--data-font-family', settings.waterfallSettings.dataFontFamily),
     style.setProperty('--data-font-size', `${settings.waterfallSettings.dataFontSize}pt`),
-    style.setProperty('--data-font-color', settings.waterfallSettings.dataFontColor)
+    style.setProperty('--data-font-color', settings.waterfallSettings.dataFontColor),
+    style.setProperty('--gridline-color', settings.waterfallSettings.gridlineColor),
+    style.setProperty('--gridline-width', `${settings.waterfallSettings.gridlineWidth}`)
 } 

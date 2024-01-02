@@ -51,5 +51,7 @@ export class VisualSettings extends DataViewObjectsParser {
       public dataFontSize: number = 12;
       public dataFontFamily: string = "Arial, sans-serif"
       public dataFontColor: string = "#433F72"
+      public gridlineColor: string = "#333333";
+      public gridlineWidth: number = 0.5;
      }
 

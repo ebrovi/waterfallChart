@@ -166,6 +166,22 @@
                     "type": {
                         "bool": true
                     }
+                },
+                "gridlineColor": {
+                    "displayName": "Line color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "gridlineWidth": {
+                    "displayName": "Gridline Width",
+                    "type": {
+                        "numeric": true
+                    }
                 }
             }
         }

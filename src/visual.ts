@@ -87,11 +87,11 @@ export class Visual implements IVisual {
 
         const maxLen = this.getTextWidth(this.formatMeasure(this.data.maxValue, this.data.formatString)) * 1.5
         const minLen = this.getTextWidth(this.formatMeasure(this.data.minValue, this.data.formatString)) * 1.5
-        const margin = Math.max(maxLen, minLen)
+        const xMargin = Math.max(maxLen, minLen) // margin is the largest out of the values displayed on the y-axis
 
         this.scaleX = scalePoint()
             .domain(Array.from(this.data.items, d => d.category))
-            .range([margin, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
+            .range([xMargin, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
             .padding(0.5)
     
         const baseLine = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth    // ----------------------- FÖRBÄTTRA -----------------------------------
@@ -101,8 +101,6 @@ export class Visual implements IVisual {
             .range([baseLine - this.settings.waterfallSettings.dataFontSize*2.5, this.settings.waterfallSettings.fontSize + this.settings.waterfallSettings.dataFontSize*2.5]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
-
-        console.log("hidestart", hideStart)
 
         interface barObject {
             startY: number,
@@ -142,8 +140,8 @@ export class Visual implements IVisual {
         const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue, baseLine)
 
         this.defGradients(colors) 
-        this.drawXAxis(margin)
-        this.drawYAxis(baseLine, margin, yMin, yMax, stepSize)
+        this.drawXAxis(xMargin)
+        this.drawYAxis(baseLine, xMargin, yMin, yMax, stepSize)
         this.drawCategoryLabels()
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
@@ -219,7 +217,7 @@ export class Visual implements IVisual {
         return { yMin, yMax, stepSize };
     }
 
-    private drawYAxis(baseline, sideMargin, yMin, yMax, stepSize) {
+    private drawYAxis(baseline, xMargin, yMin, yMax, stepSize) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); 
 
         let tickValues = []; 
@@ -233,33 +231,42 @@ export class Visual implements IVisual {
                 });
             }
         }
+
+
+        // ---------------------------------- Y-AXIS -----------------------------------------
     
         yAxis.enter().append('line')
             .classed('y-axis', true)
-            .attr('x1', sideMargin)
+            .attr('x1', xMargin)
             .attr('y1', this.settings.waterfallSettings.fontSize)
-            .attr('x2', sideMargin)
+            .attr('x2', xMargin)
             .attr('y2', baseline);
         
         yAxis.transition(this.transition)
-            .attr('x1', sideMargin)
+            .attr('x1', xMargin)
             .attr('y1', this.settings.waterfallSettings.fontSize)
-            .attr('x2', sideMargin)
+            .attr('x2', xMargin)
             .attr('y2', baseline);
+
+
+        // ---------------------------------- TICKS -----------------------------------------
 
         const ticks = this.svg.selectAll('line.y-tick').data(tickValues);
         ticks.enter().append('line')
             .classed('y-tick', true)
-            .attr('x1', sideMargin - 5) // length of tick
+            .attr('x1', xMargin - 5) // length of tick
             .attr('y1', d => d.scaledValue)
-            .attr('x2', sideMargin)
+            .attr('x2', xMargin)
             .attr('y2', d => d.scaledValue)
         
         ticks.transition(this.transition)
-            .attr('x1', sideMargin - 5) // length of tick
+            .attr('x1', xMargin - 5) // length of tick
             .attr('y1', d => d.scaledValue)
-            .attr('x2', sideMargin)
+            .attr('x2', xMargin)
             .attr('y2', d => d.scaledValue)
+
+        
+        // ---------------------------------- TICK LABELS -----------------------------------------
     
         const tickLabels = this.svg.selectAll('text.y-tick-label').data(tickValues);
         tickLabels.enter().append('text')
@@ -276,9 +283,26 @@ export class Visual implements IVisual {
             .style('fill', this.settings.waterfallSettings.fontColor)
     
 
+        // ---------------------------------- GRIDLINES -----------------------------------------
+
+        const gridlines = this.svg.selectAll('line.gridline').data(tickValues);
+        gridlines.enter().append('line')
+            .classed('gridline', true)
+            .attr('x1', xMargin) // length of tick
+            .attr('y1', d => d.scaledValue)
+            .attr('x2', this.scaleX.range()[1])
+            .attr('y2', d => d.scaledValue)
+        
+        gridlines.transition(this.transition)
+            .attr('x1', xMargin) // length of tick
+            .attr('y1', d => d.scaledValue)
+            .attr('x2', this.scaleX.range()[1])
+            .attr('y2', d => d.scaledValue)
+
         yAxis.exit().remove();
         ticks.exit().remove();
         tickLabels.exit().remove();
+        gridlines.exit().remove();
     }
   
 
@@ -385,7 +409,7 @@ export class Visual implements IVisual {
                     return d.value
                 }
             })
-            .style('fill', this.settings.waterfallSettings.fontColor)
+            .style('fill', this.settings.waterfallSettings.dataFontColor)
 
         dataLabel.exit().remove();     
     }
@@ -543,7 +567,9 @@ export class Visual implements IVisual {
                         dataFontSize: this.settings.waterfallSettings.dataFontSize,
                         dataFontFamily: this.settings.waterfallSettings.dataFontFamily,
                         dataFontColor: this.settings.waterfallSettings.dataFontColor,
-                        hideStart: this.settings.waterfallSettings.hideStart
+                        hideStart: this.settings.waterfallSettings.hideStart,
+                        gridlineColor: this.settings.waterfallSettings.gridlineColor,
+                        gridlineWidth: this.settings.waterfallSettings.gridlineWidth
                     },
                     selector: null
                 })
