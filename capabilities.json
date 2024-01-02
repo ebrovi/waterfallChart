@@ -161,6 +161,12 @@
                         "bool": true
                     }
                 },
+                "decimals": {
+                    "displayName": "Rounded decimals",
+                    "type": {
+                        "numeric": true
+                    }
+                },
                 "hideStart": {
                     "displayName": "Hide start",
                     "type": {

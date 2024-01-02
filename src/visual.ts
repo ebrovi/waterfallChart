@@ -273,13 +273,13 @@ export class Visual implements IVisual {
             .classed('y-tick-label', true)
             .attr('x', 0) 
             .attr('y',  d => d.scaledValue)
-            .text(d => d.value)
+            .text(d => this.formatValue(d.value))
             .style('fill', this.settings.waterfallSettings.fontColor)
         
         tickLabels.transition(this.transition)
             .attr('x', 0) 
             .attr('y',  d => d.scaledValue)
-            .text(d => d.value)
+            .text(d => this.formatValue(d.value))
             .style('fill', this.settings.waterfallSettings.fontColor)
     
 
@@ -391,7 +391,7 @@ export class Visual implements IVisual {
             })
             .text(d => {
                 if (this.settings.waterfallSettings.dataLabel) {
-                    return d.value
+                    return this.formatValue(d.value)
                 }
             })
             .style('fill', this.settings.waterfallSettings.dataFontColor)
@@ -403,10 +403,9 @@ export class Visual implements IVisual {
                 barArray[i].dir === 1 || d.type === 2 ? yPos = barArray[i].startY - margin : yPos = barArray[i].startY + barArray[i].value + margin*3
                 return yPos
             })
-            .text(d => d.value)
             .text(d => {
                 if (this.settings.waterfallSettings.dataLabel) {
-                    return d.value
+                    return this.formatValue(d.value)
                 }
             })
             .style('fill', this.settings.waterfallSettings.dataFontColor)
@@ -505,6 +504,19 @@ export class Visual implements IVisual {
         return measureSvgTextWidth(textProperties)
     }
 
+    private formatValue(num) {
+        let rounded;
+
+        (num >= 1000000) 
+            ? rounded = (num/1000000).toFixed(this.settings.waterfallSettings.decimals) + 'M'
+            : num >= 1000 
+                ? rounded = (num/1000).toFixed(this.settings.waterfallSettings.decimals) + 'k'
+                : rounded = num
+
+        console.log(num, rounded)
+        return rounded.toString();
+    }
+
     /**
      * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
      * objects and properties you want to expose to the users in the property pane.
@@ -564,6 +576,7 @@ export class Visual implements IVisual {
                         connectorWidth: this.settings.waterfallSettings.connectorWidth,
                         lineColor: this.settings.waterfallSettings.lineColor,
                         dataLabel: this.settings.waterfallSettings.dataLabel,
+                        decimals: this.settings.waterfallSettings.decimals,
                         dataFontSize: this.settings.waterfallSettings.dataFontSize,
                         dataFontFamily: this.settings.waterfallSettings.dataFontFamily,
                         dataFontColor: this.settings.waterfallSettings.dataFontColor,

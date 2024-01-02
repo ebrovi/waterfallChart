@@ -53,5 +53,6 @@ export class VisualSettings extends DataViewObjectsParser {
       public dataFontColor: string = "#433F72"
       public gridlineColor: string = "#333333";
       public gridlineWidth: number = 0.5;
+      public decimals: number = 2
      }
 
