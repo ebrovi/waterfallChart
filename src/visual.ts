@@ -197,10 +197,8 @@ export class Visual implements IVisual {
     private getMinMaxSteps(minValue, maxValue, baseLine) {
         const positiveRange = maxValue > 0 ? maxValue : 0;
         const negativeRange = minValue < 0 ? Math.abs(minValue) : 0;
-        console.log("range",positiveRange, negativeRange)
 
         const dif = Math.abs(maxValue - minValue)
-        console.log("dif",dif)
 
         const posPerc = (maxValue+0.01)/dif // +0.01 if maxValue = 0
 
@@ -218,19 +216,23 @@ export class Visual implements IVisual {
         const yMin = Math.floor(minValue / stepSize) * stepSize;
         const yMax = Math.ceil(maxValue / stepSize) * stepSize;
     
-        console.log("Adjusted Min & Max:", yMin, yMax, "Step Size:", stepSize);
-    
         return { yMin, yMax, stepSize };
     }
 
     private drawYAxis(baseline, sideMargin, yMin, yMax, stepSize) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); 
 
-        let tickValues = [];
+        let tickValues = []; 
+
         for (let value = yMin; value <= yMax; value += stepSize) {
-            tickValues.push(value);
+            let scaledValue = this.scaleY(value)
+            if (scaledValue < baseline && scaledValue > this.settings.waterfallSettings.fontSize) {
+                tickValues.push({
+                    value: value, 
+                    scaledValue: scaledValue
+                });
+            }
         }
-        console.log(tickValues)
     
         yAxis.enter().append('line')
             .classed('y-axis', true)
@@ -249,59 +251,28 @@ export class Visual implements IVisual {
         ticks.enter().append('line')
             .classed('y-tick', true)
             .attr('x1', sideMargin - 5) // length of tick
-            .attr('y1', d => {
-                const pos = this.scaleY(d)
-                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
-                    return pos 
-                }
-               })
+            .attr('y1', d => d.scaledValue)
             .attr('x2', sideMargin)
-            .attr('y2', d => {
-                const pos = this.scaleY(d)
-                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
-                    return pos 
-                }
-               })
+            .attr('y2', d => d.scaledValue)
         
         ticks.transition(this.transition)
             .attr('x1', sideMargin - 5) // length of tick
-            .attr('y1', d => {
-                const pos = this.scaleY(d)
-                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
-                    return pos 
-                }
-            })
+            .attr('y1', d => d.scaledValue)
             .attr('x2', sideMargin)
-            .attr('y2', d => {
-                const pos = this.scaleY(d)
-                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
-                    return pos 
-                }
-            })
-
+            .attr('y2', d => d.scaledValue)
     
         const tickLabels = this.svg.selectAll('text.y-tick-label').data(tickValues);
         tickLabels.enter().append('text')
             .classed('y-tick-label', true)
             .attr('x', 0) 
-            .attr('y',  d => {
-                const pos = this.scaleY(d)
-                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
-                    return pos 
-                }
-               })
-            .text(d => d)
+            .attr('y',  d => d.scaledValue)
+            .text(d => d.value)
             .style('fill', this.settings.waterfallSettings.fontColor)
         
         tickLabels.transition(this.transition)
             .attr('x', 0) 
-            .attr('y',  d => {
-                const pos = this.scaleY(d)
-                if (pos < baseline && pos > this.settings.waterfallSettings.fontSize) {
-                    return pos 
-                }
-            })
-            .text(d => d)
+            .attr('y',  d => d.scaledValue)
+            .text(d => d.value)
             .style('fill', this.settings.waterfallSettings.fontColor)
     
 
@@ -377,8 +348,6 @@ export class Visual implements IVisual {
                             ? this.scaleX(this.data.items[i+1].category)+barWidth/2 
                             : this.scaleX(d.category) - barWidth / 2)
         .attr('y2', (d, i) => barArray[i].dir === 1 ? barArray[i].startY+ connectorWidth/2 : barArray[i].startY + barArray[i].value + connectorWidth/2)
-
-            
 
         connectors.exit().remove();        
     }
