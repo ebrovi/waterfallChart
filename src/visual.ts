@@ -94,11 +94,11 @@ export class Visual implements IVisual {
             .range([xMargin, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
             .padding(0.5)
     
-        const baseLine = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth    // ----------------------- FÖRBÄTTRA -----------------------------------
+        const baseline = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth    // ----------------------- FÖRBÄTTRA -----------------------------------
 
         this.scaleY = scaleLinear()
             .domain([this.data.minValue, this.data.maxValue + this.settings.waterfallSettings.fontSize])
-            .range([baseLine - this.settings.waterfallSettings.dataFontSize*2.5, this.settings.waterfallSettings.fontSize + this.settings.waterfallSettings.dataFontSize*2.5]) // so bars dont go over categories
+            .range([baseline - this.settings.waterfallSettings.dataFontSize*2.5, this.settings.waterfallSettings.fontSize + this.settings.waterfallSettings.dataFontSize*2.5]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
 
@@ -135,13 +135,14 @@ export class Visual implements IVisual {
             });
 
         }
-        console.log(barArray)
 
-        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue, baseLine)
+        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
+
+        const ySteps = this.getYVal(baseline, yMin, yMax, stepSize) // försökte göra detta separat men får ej att funka i funktionerna
 
         this.defGradients(colors) 
+        this.drawYAxis(baseline, xMargin, yMin, yMax, stepSize)
         this.drawXAxis(xMargin)
-        this.drawYAxis(baseLine, xMargin, yMin, yMax, stepSize)
         this.drawCategoryLabels()
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
@@ -192,7 +193,7 @@ export class Visual implements IVisual {
         return roundedStepSize * magnitude; // Scale back to the original magnitude
     }
     
-    private getMinMaxSteps(minValue, maxValue, baseLine) {
+    private getMinMaxSteps(minValue, maxValue) {
         const positiveRange = maxValue > 0 ? maxValue : 0;
         const negativeRange = minValue < 0 ? Math.abs(minValue) : 0;
 
@@ -215,6 +216,22 @@ export class Visual implements IVisual {
         const yMax = Math.ceil(maxValue / stepSize) * stepSize;
     
         return { yMin, yMax, stepSize };
+    }
+    
+    private getYVal(baseline, yMin, yMax, stepSize) {
+        let yValues = []; 
+
+        for (let value = yMin; value <= yMax; value += stepSize) {
+            let scaledValue = this.scaleY(value)
+            if (scaledValue < baseline && scaledValue > this.settings.waterfallSettings.fontSize) {
+                yValues.push({
+                    value: value, 
+                    scaledValue: scaledValue
+                });
+            }
+        }
+
+        return yValues;
     }
 
     private drawYAxis(baseline, xMargin, yMin, yMax, stepSize) {
@@ -299,10 +316,11 @@ export class Visual implements IVisual {
             .attr('x2', this.scaleX.range()[1])
             .attr('y2', d => d.scaledValue)
 
+        gridlines.exit().remove();
         yAxis.exit().remove();
         ticks.exit().remove();
         tickLabels.exit().remove();
-        gridlines.exit().remove();
+        
     }
   
 
@@ -344,7 +362,7 @@ export class Visual implements IVisual {
                 }
             })
 
-            bars.exit().remove();
+        bars.exit().remove();
 
     }
 
@@ -513,7 +531,6 @@ export class Visual implements IVisual {
                 ? rounded = (num/1000).toFixed(this.settings.waterfallSettings.decimals) + 'k'
                 : rounded = num
 
-        console.log(num, rounded)
         return rounded.toString();
     }
 

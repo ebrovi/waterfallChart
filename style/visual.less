@@ -18,6 +18,8 @@ svg {
     }
     .bar {
         stroke-width: var(--line-width);
+        position: relative;
+        z-index: 2;
     }
     .connectors{
         stroke: var(--line-color);
@@ -41,5 +43,6 @@ svg {
     .gridline{
         stroke: var(--gridline-color);
         stroke-width: var(--gridline-width);
+        z-index: -1;
     }
 }
