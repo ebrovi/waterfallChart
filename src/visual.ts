@@ -440,7 +440,6 @@ export class Visual implements IVisual {
         catLabels.enter().append('text')
             .classed('category-label', true)
             .attr('ix', (d,i) => i)
-            .attr('x', d => this.scaleX(d.category))
             .attr('y', this.dim[1]*0.98)                           // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
@@ -449,32 +448,36 @@ export class Visual implements IVisual {
                     let lines = this.breakLine(d.category, maxWidth);
                     lines.forEach((line, lineIndex) => {
                         textElement.append('tspan')
-                            .attr('x', this.scaleX(d.category))
+                            .attr('x', this.scaleX(d.category)) // Set the 'x' attribute within the loop
                             .attr('dy', lineIndex ? '1.2em' : 0)
                             .text(line);
                     });
                 } else {
-                    textElement.text(d.category);
+                    textElement.text(d.category)
+                               .attr('x', this.scaleX(d.category)); // Set the 'x' attribute for single line text
                 }
             });
 
         catLabels.transition(this.transition)
             .attr('ix', (d,i) => i)
-            .attr('x', d => this.scaleX(d.category))
             .attr('y', this.dim[1]*0.98)                           // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
                 const textElement = select(nodes[i]);
                 if (this.getTextWidth(d.category) > maxWidth) {
                     let lines = this.breakLine(d.category, maxWidth);
+                    console.log("text innan",textElement)
+                    textElement.selectAll('*').remove();
+                    console.log("text efter",textElement)
                     lines.forEach((line, lineIndex) => {
                         textElement.append('tspan')
-                            .attr('x', this.scaleX(d.category))
+                            .attr('x', this.scaleX(d.category)) // Set the 'x' attribute within the loop
                             .attr('dy', lineIndex ? '1.2em' : 0)
                             .text(line);
                     });
                 } else {
-                    textElement.text(d.category);
+                    textElement.text(d.category)
+                               .attr('x', this.scaleX(d.category)); // Set the 'x' attribute for single line text
                 }
             });
             
