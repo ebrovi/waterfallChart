@@ -46,8 +46,6 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
                     
                     let colorIndex = value > 0 ? 0 : 1
                     let color = barColors[colorIndex] 
-
-                    console.log(minValue, maxValue, total)
                     
                     hideStart === true ? 
                         skip < 1 ?
@@ -68,7 +66,6 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
                     }  
                 }
             }
-            console.log("total",total)
             minValue = Math.min(minValue, total)
             maxValue = Math.max(maxValue, total)
 

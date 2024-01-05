@@ -203,11 +203,9 @@ export class Visual implements IVisual {
 
         const posSteps = Math.ceil(posPerc*10)
         const negSteps = Math.ceil(10-posPerc*10+0.01)
-        console.log(posSteps,negSteps)
     
         const positiveStep = this.calculateRoundingFactor(positiveRange, posSteps );
         const negativeStep = this.calculateRoundingFactor(negativeRange, negSteps);
-        console.log("step",positiveStep, negativeStep)
 
         const stepSize = Math.max(positiveStep, negativeStep);
     
@@ -439,22 +437,52 @@ export class Visual implements IVisual {
             .classed('category-label', true)
             .attr('ix', (d,i) => i)
             .attr('x', d => this.scaleX(d.category))
+<<<<<<< Updated upstream
             .attr('y', (d, i) => {
                 return this.dim[1]*0.98                             // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
 
             })
             .text(d => d.category)
             .style('fill', this.settings.waterfallSettings.fontColor)
+=======
+            .attr('y', this.dim[1]*0.98)                           // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
+            .style('fill', this.settings.waterfallSettings.fontColor)
+            .each((d, i, nodes) => {
+                const textElement = select(nodes[i]);
+                if (this.getTextWidth(d.category) > maxWidth) {
+                    let lines = this.breakLine(d.category, maxWidth);
+                    lines.forEach((line, lineIndex) => {
+                        textElement.append('tspan')
+                            .attr('x', this.scaleX(d.category))
+                            .attr('dy', lineIndex ? '1.2em' : 0)
+                            .text(line);
+                    });
+                } else {
+                    textElement.text(d.category);
+                }
+            });
+>>>>>>> Stashed changes
 
         catLabels.transition(this.transition)
             .attr('ix', (d,i) => i)
             .attr('x', d => this.scaleX(d.category))
-            .attr('y', (d, i) => {
-                return this.dim[1]*0.98
-            })
-            .text(d => d.category)
+            .attr('y', this.dim[1]*0.98)                           // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
             .style('fill', this.settings.waterfallSettings.fontColor)
-
+            .each((d, i, nodes) => {
+                const textElement = select(nodes[i]);
+                if (this.getTextWidth(d.category) > maxWidth) {
+                    let lines = this.breakLine(d.category, maxWidth);
+                    lines.forEach((line, lineIndex) => {
+                        textElement.append('tspan')
+                            .attr('x', this.scaleX(d.category))
+                            .attr('dy', lineIndex ? '1.2em' : 0)
+                            .text(line);
+                    });
+                } else {
+                    textElement.text(d.category);
+                }
+            });
+            
         catLabels.exit().remove();
         return catLabels        
     }
