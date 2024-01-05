@@ -162,7 +162,7 @@
                     }
                 },
                 "decimals": {
-                    "displayName": "Rounded decimals",
+                    "displayName": "Value decimals",
                     "type": {
                         "numeric": true
                     }

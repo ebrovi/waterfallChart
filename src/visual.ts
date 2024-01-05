@@ -85,11 +85,12 @@ export class Visual implements IVisual {
         this.svg.attr('width', this.dim[0])   
         this.svg.attr('height', this.dim[1])
 
-        //const maxLen = this.getTextWidth(this.formatMeasure((this.data.maxValue), this.data.formatString)) * 1.5
-        //const minLen = this.getTextWidth(this.formatMeasure((this.data.minValue), this.data.formatString)) * 1.5
 
-        const maxLen = this.getTextWidth(this.formatMeasure(this.formatValue(this.data.maxValue), this.data.formatString)) * 1.5
-        const minLen = this.getTextWidth(this.formatMeasure(this.formatValue(this.data.minValue), this.data.formatString)) * 1.5
+
+        const maxLen = this.getTextWidth(this.formatter(this.data.maxValue)) * 1.2
+        const minLen = this.getTextWidth(this.formatter(this.data.minValue)) * 1.2
+
+        console.log(maxLen,minLen)
         const xMargin = Math.max(maxLen, minLen) // margin is the largest out of the values displayed on the y-axis
 
         this.scaleX = scalePoint()
@@ -152,8 +153,6 @@ export class Visual implements IVisual {
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
         this.drawBars(barArray)
-        
-        
     }
 
     
@@ -567,7 +566,8 @@ export class Visual implements IVisual {
 
     private formatter(measure) {
         const formatter = valueFormatter.create({
-            value: this.settings.waterfallSettings.displayUnit
+            value: this.settings.waterfallSettings.displayUnit,
+            precision: this.settings.waterfallSettings.decimals
         })
         return formatter.format(measure)
     }
@@ -581,17 +581,6 @@ export class Visual implements IVisual {
         return measureSvgTextWidth(textProperties)
     }
 
-    private formatValue(num) {
-        let rounded;
-
-        (num >= 1000000) 
-            ? rounded = (num/1000000).toFixed(this.settings.waterfallSettings.decimals) + 'M'
-            : num >= 1000 
-                ? rounded = (num/1000).toFixed(this.settings.waterfallSettings.decimals) + 'k'
-                : rounded = num
-
-        return rounded.toString();
-    }
 
     /**
      * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
@@ -640,14 +629,14 @@ export class Visual implements IVisual {
                         connectorWidth: this.settings.waterfallSettings.connectorWidth,
                         lineColor: this.settings.waterfallSettings.lineColor,
                         dataLabel: this.settings.waterfallSettings.dataLabel,
-                        decimals: this.settings.waterfallSettings.decimals,
                         dataFontSize: this.settings.waterfallSettings.dataFontSize,
                         dataFontFamily: this.settings.waterfallSettings.dataFontFamily,
                         dataFontColor: this.settings.waterfallSettings.dataFontColor,
                         hideStart: this.settings.waterfallSettings.hideStart,
                         gridlineColor: this.settings.waterfallSettings.gridlineColor,
                         gridlineWidth: this.settings.waterfallSettings.gridlineWidth,
-                        displayUnit: this.settings.waterfallSettings.displayUnit
+                        displayUnit: this.settings.waterfallSettings.displayUnit,
+                        decimals: this.settings.waterfallSettings.decimals,
                     },
                     selector: null
                 })
