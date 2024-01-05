@@ -156,6 +156,8 @@ export class Visual implements IVisual {
         
     }
 
+    
+
     private static parseSettings(dataView: DataView): VisualSettings {
         return <VisualSettings>VisualSettings.parse(dataView);
     }
@@ -293,13 +295,13 @@ export class Visual implements IVisual {
             .classed('y-tick-label', true)
             .attr('x', 0) 
             .attr('y',  d => d.scaledValue)
-            .text(d => this.formatValue(d.value))
+            .text(d => this.formatter(d.value))
             .style('fill', this.settings.waterfallSettings.fontColor)
         
         tickLabels.transition(this.transition)
             .attr('x', 0) 
             .attr('y',  d => d.scaledValue)
-            .text(d => this.formatValue(d.value))
+            .text(d => this.formatter(d.value))
             .style('fill', this.settings.waterfallSettings.fontColor)
     
 
@@ -412,7 +414,8 @@ export class Visual implements IVisual {
             })
             .text(d => {
                 if (this.settings.waterfallSettings.dataLabel) {
-                    return this.formatValue(d.value)
+                    return this.formatter(d.value)
+                    
                 }
             })
             .style('fill', this.settings.waterfallSettings.dataFontColor)
@@ -426,7 +429,7 @@ export class Visual implements IVisual {
             })
             .text(d => {
                 if (this.settings.waterfallSettings.dataLabel) {
-                    return this.formatValue(d.value)
+                    return this.formatter(d.value)
                 }
             })
             .style('fill', this.settings.waterfallSettings.dataFontColor)
@@ -557,8 +560,15 @@ export class Visual implements IVisual {
         this.padHex(Math.round(b).toString(16));
     }
 
-    private formatMeasure(measure: Number, fs: string): string { // :string definerar att det vi returnerar är en sträng
+    private formatMeasure(measure: Number, fs: string) { // :string definerar att det vi returnerar är en sträng
         const formatter = valueFormatter.create({format: fs})
+        return formatter.format(measure)
+    }
+
+    private formatter(measure) {
+        const formatter = valueFormatter.create({
+            value: this.settings.waterfallSettings.displayUnit
+        })
         return formatter.format(measure)
     }
 
