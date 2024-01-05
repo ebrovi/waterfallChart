@@ -167,6 +167,15 @@
                         "numeric": true
                     }
                 },
+                "displayUnit": {
+					"displayName": "Display Units",
+					"description": "Specify display unit.",
+					"type": {
+						"formatting": {
+							"labelDisplayUnits": true
+						}
+					}
+				},
                 "hideStart": {
                     "displayName": "Hide start",
                     "type": {

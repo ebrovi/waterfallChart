@@ -4,7 +4,7 @@
         "displayName": "waterfallChart",
         "guid": "waterfallChartEB4B4595C4364CD4BE27731AD680350C",
         "visualClassName": "Visual",
-        "version": "1.0.0",
+        "version": "1.0.0.0",
         "description": "Waterfall chart with multiple part sums",
         "supportUrl": "N/A",
         "gitHubUrl": "N/A"

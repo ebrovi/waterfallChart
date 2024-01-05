@@ -85,8 +85,11 @@ export class Visual implements IVisual {
         this.svg.attr('width', this.dim[0])   
         this.svg.attr('height', this.dim[1])
 
-        const maxLen = this.getTextWidth(this.formatMeasure(this.data.maxValue, this.data.formatString)) * 1.5
-        const minLen = this.getTextWidth(this.formatMeasure(this.data.minValue, this.data.formatString)) * 1.5
+        //const maxLen = this.getTextWidth(this.formatMeasure((this.data.maxValue), this.data.formatString)) * 1.5
+        //const minLen = this.getTextWidth(this.formatMeasure((this.data.minValue), this.data.formatString)) * 1.5
+
+        const maxLen = this.getTextWidth(this.formatMeasure(this.formatValue(this.data.maxValue), this.data.formatString)) * 1.5
+        const minLen = this.getTextWidth(this.formatMeasure(this.formatValue(this.data.minValue), this.data.formatString)) * 1.5
         const xMargin = Math.max(maxLen, minLen) // margin is the largest out of the values displayed on the y-axis
 
         this.scaleX = scalePoint()
@@ -444,17 +447,17 @@ export class Visual implements IVisual {
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
                 const textElement = select(nodes[i]);
-                if (this.getTextWidth(d.category) > maxWidth) {
+                if (this.getTextWidth(d.category) >= maxWidth) {
                     let lines = this.breakLine(d.category, maxWidth);
                     lines.forEach((line, lineIndex) => {
                         textElement.append('tspan')
-                            .attr('x', this.scaleX(d.category)) // Set the 'x' attribute within the loop
-                            .attr('dy', lineIndex ? '1.2em' : 0)
+                            .attr('x', this.scaleX(d.category)) 
+                            .attr('dy', lineIndex ? '1em' : 0)
                             .text(line);
                     });
                 } else {
                     textElement.text(d.category)
-                               .attr('x', this.scaleX(d.category)); // Set the 'x' attribute for single line text
+                               .attr('x', this.scaleX(d.category)); 
                 }
             });
 
@@ -464,20 +467,20 @@ export class Visual implements IVisual {
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
                 const textElement = select(nodes[i]);
-                if (this.getTextWidth(d.category) > maxWidth) {
+                if (this.getTextWidth(d.category) >= maxWidth) {
                     let lines = this.breakLine(d.category, maxWidth);
                     console.log("text innan",textElement)
                     textElement.selectAll('*').remove();
                     console.log("text efter",textElement)
                     lines.forEach((line, lineIndex) => {
                         textElement.append('tspan')
-                            .attr('x', this.scaleX(d.category)) // Set the 'x' attribute within the loop
-                            .attr('dy', lineIndex ? '1.2em' : 0)
+                            .attr('x', this.scaleX(d.category)) 
+                            .attr('dy', lineIndex ? '1em' : 0)
                             .text(line);
                     });
-                } else {
+                } else {console.log("else",textElement)
                     textElement.text(d.category)
-                               .attr('x', this.scaleX(d.category)); // Set the 'x' attribute for single line text
+                               .attr('x', this.scaleX(d.category)); 
                 }
             });
             
@@ -615,18 +618,6 @@ export class Visual implements IVisual {
                     },
                     selector: null
                 }),
-                /*objectEnumeration.push ({    //   -------------------------------- update if FX color needed
-                    objectName,
-                    properties: {
-                        sumBarColor: this.settings.waterfallSettings.sumBarColor
-                        //negBarColor: this.settings.waterfallSettings.negBarColor
-                    },
-                    selector: dataViewWildcard.createDataViewWildcardSelector(dataViewWildcard.DataViewWildcardMatchingOption.InstancesAndTotals),
-                    altConstantValueSelector: this.settings.waterfallSettings.sumBarColor,  
-                    propertyInstanceKind: { // Detta är vad som blir "fx knappen" conditional formatting 
-                        sumBarColor: VisualEnumerationInstanceKinds.ConstantOrRule  /// Här defineras det om färgen ska vara solid eller enligt field view. Gradient fungerar inte 
-                    }
-                }),*/
                 objectEnumeration.push ({
                     objectName,
                     properties: {
@@ -645,7 +636,8 @@ export class Visual implements IVisual {
                         dataFontColor: this.settings.waterfallSettings.dataFontColor,
                         hideStart: this.settings.waterfallSettings.hideStart,
                         gridlineColor: this.settings.waterfallSettings.gridlineColor,
-                        gridlineWidth: this.settings.waterfallSettings.gridlineWidth
+                        gridlineWidth: this.settings.waterfallSettings.gridlineWidth,
+                        displayUnit: this.settings.waterfallSettings.displayUnit
                     },
                     selector: null
                 })
