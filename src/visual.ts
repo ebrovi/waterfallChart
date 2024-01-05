@@ -140,10 +140,12 @@ export class Visual implements IVisual {
 
         const ySteps = this.getYVal(baseline, yMin, yMax, stepSize) // försökte göra detta separat men får ej att funka i funktionerna
 
+        const xLen = Math.abs(this.scaleX.range()[1]-xMargin)
+
         this.defGradients(colors) 
         this.drawYAxis(baseline, xMargin, yMin, yMax, stepSize)
         this.drawXAxis(xMargin)
-        this.drawCategoryLabels()
+        this.drawCategoryLabels(xLen)
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
         this.drawBars(barArray)
@@ -429,22 +431,16 @@ export class Visual implements IVisual {
         dataLabel.exit().remove();     
     }
 
-    private drawCategoryLabels(){
+    private drawCategoryLabels(xLen){
 
         const catLabels = this.svg.selectAll('text.category-label').data(this.data.items)
+
+        const maxWidth = xLen/this.data.items.length
         
         catLabels.enter().append('text')
             .classed('category-label', true)
             .attr('ix', (d,i) => i)
             .attr('x', d => this.scaleX(d.category))
-<<<<<<< Updated upstream
-            .attr('y', (d, i) => {
-                return this.dim[1]*0.98                             // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
-
-            })
-            .text(d => d.category)
-            .style('fill', this.settings.waterfallSettings.fontColor)
-=======
             .attr('y', this.dim[1]*0.98)                           // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
@@ -461,7 +457,6 @@ export class Visual implements IVisual {
                     textElement.text(d.category);
                 }
             });
->>>>>>> Stashed changes
 
         catLabels.transition(this.transition)
             .attr('ix', (d,i) => i)
@@ -485,6 +480,26 @@ export class Visual implements IVisual {
             
         catLabels.exit().remove();
         return catLabels        
+    }
+
+    private breakLine(text, width) {
+        const words = text.split(/\s+/);
+        const lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const newLine = currentLine + " " + word;
+            if (this.getTextWidth(newLine) < width) {
+                currentLine = newLine;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        console.log("lines", lines)
+        return lines;
     }
 
     private defGradients(colors) {
