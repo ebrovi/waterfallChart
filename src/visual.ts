@@ -58,6 +58,8 @@ export class Visual implements IVisual {
     private scaleX: ScalePoint<string>
     private scaleY: ScaleLinear<number, number>
     private transition: Transition<BaseType, unknown, null, undefined>
+    private baseline: number;
+    private lines: number = 1;
 
     constructor(options: VisualConstructorOptions) {
         this.target = options.element;
@@ -86,7 +88,6 @@ export class Visual implements IVisual {
         this.svg.attr('height', this.dim[1])
 
 
-
         const maxLen = this.getTextWidth(this.formatter(this.data.maxValue)) * 1.2
         const minLen = this.getTextWidth(this.formatter(this.data.minValue)) * 1.2
 
@@ -96,12 +97,13 @@ export class Visual implements IVisual {
             .domain(Array.from(this.data.items, d => d.category))
             .range([xMargin, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
             .padding(0.5)
-    
-        const baseline = this.dim[1] - this.settings.waterfallSettings.fontSize*2 -this.settings.waterfallSettings.lineWidth    // ----------------------- FÖRBÄTTRA -----------------------------------
+
+        this.baseline = this.dim[1] - (this.settings.waterfallSettings.fontSize*this.lines) -this.settings.waterfallSettings.lineWidth    // ----------------------- FÖRBÄTTRA -----------------------------------
+        console.log("baseline", this.baseline, "fontPix", this.settings.waterfallSettings.fontSize)
 
         this.scaleY = scaleLinear()
             .domain([this.data.minValue, this.data.maxValue + this.settings.waterfallSettings.fontSize])
-            .range([baseline - this.settings.waterfallSettings.dataFontSize*2.5, this.settings.waterfallSettings.fontSize + this.settings.waterfallSettings.dataFontSize*2.5]) // so bars dont go over categories
+            .range([this.baseline - this.settings.waterfallSettings.dataFontSize*2.5, this.settings.waterfallSettings.fontSize + this.settings.waterfallSettings.dataFontSize*2.5]) // so bars dont go over categories
 
         this.transition = transition().duration(500).ease(easeLinear)
 
@@ -141,12 +143,12 @@ export class Visual implements IVisual {
 
         const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
 
-        const ySteps = this.getYVal(baseline, yMin, yMax, stepSize) // försökte göra detta separat men får ej att funka i funktionerna
+        const ySteps = this.getYVal(yMin, yMax, stepSize) // försökte göra detta separat men får ej att funka i funktionerna
 
         const xLen = Math.abs(this.scaleX.range()[1]-xMargin)
 
         this.defGradients(colors) 
-        this.drawYAxis(baseline, xMargin, yMin, yMax, stepSize)
+        this.drawYAxis(xMargin, yMin, yMax, stepSize)
         this.drawXAxis(xMargin)
         this.drawCategoryLabels(xLen)
         this.drawConnectors(barArray)
@@ -219,12 +221,12 @@ export class Visual implements IVisual {
         return { yMin, yMax, stepSize };
     }
     
-    private getYVal(baseline, yMin, yMax, stepSize) {
+    private getYVal(yMin, yMax, stepSize) {
         let yValues = []; 
 
         for (let value = yMin; value <= yMax; value += stepSize) {
             let scaledValue = this.scaleY(value)
-            if (scaledValue < baseline && scaledValue > this.settings.waterfallSettings.fontSize) {
+            if (scaledValue < this.baseline && scaledValue > this.settings.waterfallSettings.fontSize) {
                 yValues.push({
                     value: value, 
                     scaledValue: scaledValue
@@ -235,14 +237,14 @@ export class Visual implements IVisual {
         return yValues;
     }
 
-    private drawYAxis(baseline, xMargin, yMin, yMax, stepSize) {
+    private drawYAxis( xMargin, yMin, yMax, stepSize) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); 
 
         let tickValues = []; 
 
         for (let value = yMin; value <= yMax; value += stepSize) {
             let scaledValue = this.scaleY(value)
-            if (scaledValue < baseline && scaledValue > this.settings.waterfallSettings.fontSize) {
+            if (scaledValue < this.baseline && scaledValue > this.settings.waterfallSettings.fontSize) {
                 tickValues.push({
                     value: value, 
                     scaledValue: scaledValue
@@ -258,13 +260,13 @@ export class Visual implements IVisual {
             .attr('x1', xMargin)
             .attr('y1', this.settings.waterfallSettings.fontSize)
             .attr('x2', xMargin)
-            .attr('y2', baseline);
+            .attr('y2', this.baseline);
         
         yAxis.transition(this.transition)
             .attr('x1', xMargin)
             .attr('y1', this.settings.waterfallSettings.fontSize)
             .attr('x2', xMargin)
-            .attr('y2', baseline);
+            .attr('y2', this.baseline);
 
 
         // ---------------------------------- TICKS -----------------------------------------
@@ -438,51 +440,61 @@ export class Visual implements IVisual {
         const catLabels = this.svg.selectAll('text.category-label').data(this.data.items)
 
         const maxWidth = xLen/this.data.items.length
+
+        const numLines = []
     
-            catLabels.enter().append('text')
+        catLabels.enter().append('text')
             .classed('category-label', true)
             .attr('ix', (d,i) => i)
-            .attr('y', this.dim[1]*0.98)                           // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
+            .attr('y', this.baseline)                          
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
                 const textElement = select(nodes[i]);
                 textElement.selectAll('*').remove(); 
-                    let lines = this.breakLine(d.category, maxWidth);
+                    const { lines, num } = this.breakLine(d.category, maxWidth);
+                    numLines.push(num)    
                     lines.forEach((line, lineIndex) => {
                         textElement.append('tspan')
                             .attr('x', this.scaleX(d.category)) 
-                            .attr('dy', lineIndex ? '1em' : 0)
+                            .attr('dy', lineIndex ? '1.2em' : 0)
                             .text(line);
                     });
                 
-                    
             });
 
         catLabels.transition(this.transition)
             .attr('ix', (d,i) => i)
-            .attr('y', this.dim[1]*0.98)                           // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
+            .attr('y', this.baseline)                        
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
                 const textElement = select(nodes[i]);
                 textElement.selectAll('*').remove(); 
-                    let lines = this.breakLine(d.category, maxWidth);
+                    const { lines, num } = this.breakLine(d.category, maxWidth);
+                    numLines.push(num)
                     lines.forEach((line, lineIndex) => {
                         textElement.append('tspan')
                             .attr('x', this.scaleX(d.category)) 
-                            .attr('dy', lineIndex ? '1em' : 0)
+                            .attr('dy', lineIndex ? '1.2em' : 0)
                             .text(line);
                     });
                 
                     
             }); 
+
+        console.log(numLines)
+        this.lines = Math.max(...numLines)
         catLabels.exit().remove();
         return catLabels        
     }
 
     private breakLine(text, width) {
+
+        const lines  = [];
+        let num = 1;
+
         if (this.getTextWidth(text) > width) {
             const words = text.split(/\s+/);
-            const lines = [];
+            num = words.length
             let currentLine = words[0];
     
             for (let i = 1; i < words.length; i++) {
@@ -495,10 +507,13 @@ export class Visual implements IVisual {
                     currentLine = word;
                 }
             }
+
             lines.push(currentLine);
-            return lines;
+            return {lines, num};
         }
-        return [text]
+
+        lines.push(text);
+        return {lines, num};
     }
 
     private defGradients(colors) {
