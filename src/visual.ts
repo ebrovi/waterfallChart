@@ -90,7 +90,6 @@ export class Visual implements IVisual {
         const maxLen = this.getTextWidth(this.formatter(this.data.maxValue)) * 1.2
         const minLen = this.getTextWidth(this.formatter(this.data.minValue)) * 1.2
 
-        console.log(maxLen,minLen)
         const xMargin = Math.max(maxLen, minLen) // margin is the largest out of the values displayed on the y-axis
 
         this.scaleX = scalePoint()
@@ -154,8 +153,6 @@ export class Visual implements IVisual {
         this.drawDataLabel(barArray)
         this.drawBars(barArray)
     }
-
-    
 
     private static parseSettings(dataView: DataView): VisualSettings {
         return <VisualSettings>VisualSettings.parse(dataView);
@@ -436,20 +433,20 @@ export class Visual implements IVisual {
         dataLabel.exit().remove();     
     }
 
-    private drawCategoryLabels(xLen){
+     private drawCategoryLabels(xLen){
 
         const catLabels = this.svg.selectAll('text.category-label').data(this.data.items)
 
         const maxWidth = xLen/this.data.items.length
-        
-        catLabels.enter().append('text')
+    
+            catLabels.enter().append('text')
             .classed('category-label', true)
             .attr('ix', (d,i) => i)
             .attr('y', this.dim[1]*0.98)                           // ---------------------------------------------------- HÅRDKODAT FÖRBÄTTRA ---------------------------------------------------
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
                 const textElement = select(nodes[i]);
-                if (this.getTextWidth(d.category) >= maxWidth) {
+                textElement.selectAll('*').remove(); 
                     let lines = this.breakLine(d.category, maxWidth);
                     lines.forEach((line, lineIndex) => {
                         textElement.append('tspan')
@@ -457,10 +454,8 @@ export class Visual implements IVisual {
                             .attr('dy', lineIndex ? '1em' : 0)
                             .text(line);
                     });
-                } else {
-                    textElement.text(d.category)
-                               .attr('x', this.scaleX(d.category)); 
-                }
+                
+                    
             });
 
         catLabels.transition(this.transition)
@@ -469,45 +464,41 @@ export class Visual implements IVisual {
             .style('fill', this.settings.waterfallSettings.fontColor)
             .each((d, i, nodes) => {
                 const textElement = select(nodes[i]);
-                if (this.getTextWidth(d.category) >= maxWidth) {
+                textElement.selectAll('*').remove(); 
                     let lines = this.breakLine(d.category, maxWidth);
-                    console.log("text innan",textElement)
-                    textElement.selectAll('*').remove();
-                    console.log("text efter",textElement)
                     lines.forEach((line, lineIndex) => {
                         textElement.append('tspan')
                             .attr('x', this.scaleX(d.category)) 
                             .attr('dy', lineIndex ? '1em' : 0)
                             .text(line);
                     });
-                } else {console.log("else",textElement)
-                    textElement.text(d.category)
-                               .attr('x', this.scaleX(d.category)); 
-                }
-            });
-            
+                
+                    
+            }); 
         catLabels.exit().remove();
         return catLabels        
     }
 
     private breakLine(text, width) {
-        const words = text.split(/\s+/);
-        const lines = [];
-        let currentLine = words[0];
-
-        for (let i = 1; i < words.length; i++) {
-            const word = words[i];
-            const newLine = currentLine + " " + word;
-            if (this.getTextWidth(newLine) < width) {
-                currentLine = newLine;
-            } else {
-                lines.push(currentLine);
-                currentLine = word;
+        if (this.getTextWidth(text) > width) {
+            const words = text.split(/\s+/);
+            const lines = [];
+            let currentLine = words[0];
+    
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const newLine = currentLine + " " + word;
+                if (this.getTextWidth(newLine) < width) {
+                    currentLine = newLine;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
             }
+            lines.push(currentLine);
+            return lines;
         }
-        lines.push(currentLine);
-        console.log("lines", lines)
-        return lines;
+        return [text]
     }
 
     private defGradients(colors) {
