@@ -48,6 +48,11 @@ import { setStyle } from "./setStyle"
 import { ScalePoint, scalePoint, ScaleLinear, scaleLinear} from "d3-scale";
 import { dataViewWildcard } from "powerbi-visuals-utils-dataviewutils";
 
+interface YValue {
+    value: number;
+    scaledValue: number;
+}
+
 export class Visual implements IVisual {
     private target: HTMLElement;
     private settings: VisualSettings;
@@ -60,6 +65,7 @@ export class Visual implements IVisual {
     private transition: Transition<BaseType, unknown, null, undefined>
     private baseline: number;
     private lines: number = 1;
+
 
     constructor(options: VisualConstructorOptions) {
         this.target = options.element;
@@ -98,8 +104,10 @@ export class Visual implements IVisual {
             .range([xMargin, this.dim[0]-this.settings.waterfallSettings.fontSize/2])
             .padding(0.5)
 
+        const xLen = Math.abs(this.scaleX.range()[1]-xMargin)
+        this.lines = this.getLines(xLen)
+
         this.baseline = this.dim[1] - (this.settings.waterfallSettings.fontSize*this.lines) -this.settings.waterfallSettings.lineWidth    // ----------------------- FÖRBÄTTRA -----------------------------------
-        console.log("baseline", this.baseline, "fontPix", this.settings.waterfallSettings.fontSize)
 
         this.scaleY = scaleLinear()
             .domain([this.data.minValue, this.data.maxValue + this.settings.waterfallSettings.fontSize])
@@ -142,22 +150,28 @@ export class Visual implements IVisual {
         }
 
         const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
+        const yValues = this.getYVal(yMin, yMax, stepSize)
+    
 
-        const ySteps = this.getYVal(yMin, yMax, stepSize) // försökte göra detta separat men får ej att funka i funktionerna
-
-        const xLen = Math.abs(this.scaleX.range()[1]-xMargin)
-
+        this.drawGrid(xMargin, yValues)
+        this.drawYAxis(xMargin, yValues)
         this.defGradients(colors) 
-        this.drawYAxis(xMargin, yMin, yMax, stepSize)
+        
         this.drawXAxis(xMargin)
         this.drawCategoryLabels(xLen)
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
-        this.drawBars(barArray)
+        this.drawBars(barArray)        
     }
 
     private static parseSettings(dataView: DataView): VisualSettings {
         return <VisualSettings>VisualSettings.parse(dataView);
+    }
+
+    private getLines(xLen) {
+        const maxWidth = xLen / this.data.items.length;
+        const numLines = this.data.items.map(item => this.breakLine(item.category, maxWidth).num);
+        return (Math.max(...numLines));
     }
 
     private drawXAxis(sideMargin) {
@@ -220,9 +234,10 @@ export class Visual implements IVisual {
     
         return { yMin, yMax, stepSize };
     }
-    
-    private getYVal(yMin, yMax, stepSize) {
-        let yValues = []; 
+
+   
+    private getYVal(yMin, yMax, stepSize): YValue[] {
+        let yValues: YValue[] = []; 
 
         for (let value = yMin; value <= yMax; value += stepSize) {
             let scaledValue = this.scaleY(value)
@@ -237,21 +252,29 @@ export class Visual implements IVisual {
         return yValues;
     }
 
-    private drawYAxis( xMargin, yMin, yMax, stepSize) {
+    private drawGrid(xMargin, yValues: YValue[]) {
+
+        const gridlines = this.svg.selectAll('line.gridline').data(yValues);
+        
+        gridlines.enter().append('line')
+            .classed('gridline', true)
+            .attr('x1', xMargin) // length of tick
+            .attr('y1', d => d.scaledValue)
+            .attr('x2', this.scaleX.range()[1])
+            .attr('y2', d => d.scaledValue)
+        
+        gridlines.transition(this.transition)
+            .attr('x1', xMargin) // length of tick
+            .attr('y1', d => d.scaledValue)
+            .attr('x2', this.scaleX.range()[1])
+            .attr('y2', d => d.scaledValue)
+
+        gridlines.exit().remove();
+
+    }
+
+    private drawYAxis( xMargin, yValues: YValue[]) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); 
-
-        let tickValues = []; 
-
-        for (let value = yMin; value <= yMax; value += stepSize) {
-            let scaledValue = this.scaleY(value)
-            if (scaledValue < this.baseline && scaledValue > this.settings.waterfallSettings.fontSize) {
-                tickValues.push({
-                    value: value, 
-                    scaledValue: scaledValue
-                });
-            }
-        }
-
 
         // ---------------------------------- Y-AXIS -----------------------------------------
     
@@ -271,7 +294,7 @@ export class Visual implements IVisual {
 
         // ---------------------------------- TICKS -----------------------------------------
 
-        const ticks = this.svg.selectAll('line.y-tick').data(tickValues);
+        const ticks = this.svg.selectAll('line.y-tick').data(yValues);
         ticks.enter().append('line')
             .classed('y-tick', true)
             .attr('x1', xMargin - 5) // length of tick
@@ -288,7 +311,7 @@ export class Visual implements IVisual {
         
         // ---------------------------------- TICK LABELS -----------------------------------------
     
-        const tickLabels = this.svg.selectAll('text.y-tick-label').data(tickValues);
+        const tickLabels = this.svg.selectAll('text.y-tick-label').data(yValues);
         tickLabels.enter().append('text')
             .classed('y-tick-label', true)
             .attr('x', 0) 
@@ -301,25 +324,7 @@ export class Visual implements IVisual {
             .attr('y',  d => d.scaledValue)
             .text(d => this.formatter(d.value))
             .style('fill', this.settings.waterfallSettings.fontColor)
-    
-
-        // ---------------------------------- GRIDLINES -----------------------------------------
-
-        const gridlines = this.svg.selectAll('line.gridline').data(tickValues);
-        gridlines.enter().append('line')
-            .classed('gridline', true)
-            .attr('x1', xMargin) // length of tick
-            .attr('y1', d => d.scaledValue)
-            .attr('x2', this.scaleX.range()[1])
-            .attr('y2', d => d.scaledValue)
-        
-        gridlines.transition(this.transition)
-            .attr('x1', xMargin) // length of tick
-            .attr('y1', d => d.scaledValue)
-            .attr('x2', this.scaleX.range()[1])
-            .attr('y2', d => d.scaledValue)
-
-        gridlines.exit().remove();
+          
         yAxis.exit().remove();
         ticks.exit().remove();
         tickLabels.exit().remove();
@@ -364,6 +369,8 @@ export class Visual implements IVisual {
                     return d.color
                 }
             })
+        
+            bars.raise()
 
         bars.exit().remove();
 
@@ -480,9 +487,8 @@ export class Visual implements IVisual {
                 
                     
             }); 
-
-        console.log(numLines)
-        this.lines = Math.max(...numLines)
+       
+        this.lines = Math.max(...numLines) // updates this.lines, adjusting baselines position so that category labels aren't out of scope
         catLabels.exit().remove();
         return catLabels        
     }
