@@ -54,6 +54,12 @@ interface YValue {
     scaledValue: number;
 }
 
+interface barObject {
+    startY: number,
+    dir: number,
+    value: number
+}
+
 export class Visual implements IVisual {
     private target: HTMLElement;
     private settings: VisualSettings;
@@ -118,12 +124,26 @@ export class Visual implements IVisual {
 
         this.transition = transition().duration(500).ease(easeLinear)
 
-        interface barObject {
-            startY: number,
-            dir: number,
-            value: number
-        }
+        const barArray = this.getData()
+        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
+        const yValues = this.getYVal(yMin, yMax, stepSize)
+    
+        this.drawGrid(xMargin, yValues)
+        this.drawYLabels(yValues)
+        this.defGradients(colors) 
+        this.drawCategoryLabels(xLen)
+        this.drawConnectors(barArray)
+        this.drawDataLabel(barArray)
+        this.drawBars(barArray)      
+        this.drawYAxis(xMargin, yValues) 
+        this.drawXAxis(xMargin)
+    }
 
+    private static parseSettings(dataView: DataView): VisualSettings {
+        return <VisualSettings>VisualSettings.parse(dataView);
+    }
+
+    private getData() {
         let prevH = this.scaleY(0);
         let barArray: barObject[] = []; 
 
@@ -151,28 +171,7 @@ export class Visual implements IVisual {
             });
 
         }
-
-        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
-        const yValues = this.getYVal(yMin, yMax, stepSize)
-    
-
-        this.drawGrid(xMargin, yValues)
-        this.drawYLabels(yValues)
-        this.defGradients(colors) 
-        this.drawCategoryLabels(xLen)
-        this.drawConnectors(barArray)
-        this.drawDataLabel(barArray)
-        this.drawBars(barArray)      
-
-       // if (this.settings.waterfallSettings.axesEnabled) {
-            this.drawYAxis(xMargin, yValues) 
-            this.drawXAxis(xMargin)
-        //} 
-        
-    }
-
-    private static parseSettings(dataView: DataView): VisualSettings {
-        return <VisualSettings>VisualSettings.parse(dataView);
+        return barArray
     }
 
     private getLines(xLen) {
