@@ -46,14 +46,15 @@ export class VisualSettings extends DataViewObjectsParser {
       public connectorWidth: number = 1;
       public gradientEnabled: boolean = false;
       public lineColor: string = "#D5D2D2"
-      public dataLabel: boolean = false;
+      public dataLabel: boolean = true;
       public hideStart: boolean = false;
       public dataFontSize: number = 12;
       public dataFontFamily: string = "Arial, sans-serif"
-      public dataFontColor: string = "#433F72"
+      public dataFontColor: string = "#666666"
       public gridlineColor: string = "#333333";
       public gridlineWidth: number = 0.5;
       public decimals: number = 2;
-      public displayUnit: string = "None"
+      public displayUnit: string = "Auto"
+      public axesEnabled: boolean = false;
      }
 

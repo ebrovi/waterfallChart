@@ -37,6 +37,7 @@ import IVisualHost = powerbi.extensibility.visual.IVisualHost
 import DataView = powerbi.DataView;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 import {valueFormatter, textMeasurementService} from "powerbi-visuals-utils-formattingutils";
+import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
 import measureSvgTextWidth = textMeasurementService.measureSvgTextWidth;
 
 import { Selection, select, selectAll, BaseType} from "d3-selection";
@@ -65,10 +66,12 @@ export class Visual implements IVisual {
     private transition: Transition<BaseType, unknown, null, undefined>
     private baseline: number;
     private lines: number = 1;
+    private formattingSettingsService: FormattingSettingsService;
 
 
     constructor(options: VisualConstructorOptions) {
         this.target = options.element;
+        this.formattingSettingsService = new FormattingSettingsService();
         this.host = options.host;
         if (document) {
             this.svg = select(this.target).append('svg')
@@ -154,14 +157,18 @@ export class Visual implements IVisual {
     
 
         this.drawGrid(xMargin, yValues)
-        this.drawYAxis(xMargin, yValues)
+        this.drawYLabels(yValues)
         this.defGradients(colors) 
-        
-        this.drawXAxis(xMargin)
         this.drawCategoryLabels(xLen)
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
-        this.drawBars(barArray)        
+        this.drawBars(barArray)      
+
+       // if (this.settings.waterfallSettings.axesEnabled) {
+            this.drawYAxis(xMargin, yValues) 
+            this.drawXAxis(xMargin)
+        //} 
+        
     }
 
     private static parseSettings(dataView: DataView): VisualSettings {
@@ -183,12 +190,23 @@ export class Visual implements IVisual {
             .attr('y1', this.scaleY(0))
             .attr('x2', this.scaleX.range()[1] )
             .attr('y2', this.scaleY(0))
+            .style('stroke', d => {
+                if (this.settings.waterfallSettings.axesEnabled) {
+                    return this.settings.waterfallSettings.lineColor
+                }
+            })
+
 
         xAxis.transition(this.transition)
             .attr('x1', sideMargin)
             .attr('y1', this.scaleY(0))
             .attr('x2', this.scaleX.range()[1] )
             .attr('y2', this.scaleY(0))
+            .style('stroke', d => {
+                if (this.settings.waterfallSettings.axesEnabled) {
+                    return this.settings.waterfallSettings.lineColor
+                }
+            })
 
         xAxis.exit().remove()
     
@@ -270,12 +288,28 @@ export class Visual implements IVisual {
             .attr('y2', d => d.scaledValue)
 
         gridlines.exit().remove();
+    }
 
+    private drawYLabels(yValues: YValue[]) {
+        const yLabels = this.svg.selectAll('text.y-tick-label').data(yValues);
+        yLabels.enter().append('text')
+            .classed('y-tick-label', true)
+            .attr('x', 0) 
+            .attr('y',  d => d.scaledValue)
+            .text(d => this.formatter(d.value))
+            .style('fill', this.settings.waterfallSettings.fontColor)
+        
+        yLabels.transition(this.transition)
+            .attr('x', 0) 
+            .attr('y',  d => d.scaledValue)
+            .text(d => this.formatter(d.value))
+            .style('fill', this.settings.waterfallSettings.fontColor)
+
+        yLabels.exit().remove();
     }
 
     private drawYAxis( xMargin, yValues: YValue[]) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); 
-
         // ---------------------------------- Y-AXIS -----------------------------------------
     
         yAxis.enter().append('line')
@@ -283,13 +317,23 @@ export class Visual implements IVisual {
             .attr('x1', xMargin)
             .attr('y1', this.settings.waterfallSettings.fontSize)
             .attr('x2', xMargin)
-            .attr('y2', this.baseline);
+            .attr('y2', this.baseline)
+            .style('stroke', d => {
+                if (this.settings.waterfallSettings.axesEnabled) {
+                    return this.settings.waterfallSettings.lineColor
+                }
+            })
         
         yAxis.transition(this.transition)
             .attr('x1', xMargin)
             .attr('y1', this.settings.waterfallSettings.fontSize)
             .attr('x2', xMargin)
-            .attr('y2', this.baseline);
+            .attr('y2', this.baseline)
+            .style('stroke', d => {
+                if (this.settings.waterfallSettings.axesEnabled) {
+                    return this.settings.waterfallSettings.lineColor
+                }
+            })
 
 
         // ---------------------------------- TICKS -----------------------------------------
@@ -301,34 +345,26 @@ export class Visual implements IVisual {
             .attr('y1', d => d.scaledValue)
             .attr('x2', xMargin)
             .attr('y2', d => d.scaledValue)
+            .style('stroke', d => {
+                if (this.settings.waterfallSettings.axesEnabled) {
+                    return this.settings.waterfallSettings.lineColor
+                }
+            })
         
         ticks.transition(this.transition)
             .attr('x1', xMargin - 5) // length of tick
             .attr('y1', d => d.scaledValue)
             .attr('x2', xMargin)
             .attr('y2', d => d.scaledValue)
-
-        
-        // ---------------------------------- TICK LABELS -----------------------------------------
-    
-        const tickLabels = this.svg.selectAll('text.y-tick-label').data(yValues);
-        tickLabels.enter().append('text')
-            .classed('y-tick-label', true)
-            .attr('x', 0) 
-            .attr('y',  d => d.scaledValue)
-            .text(d => this.formatter(d.value))
-            .style('fill', this.settings.waterfallSettings.fontColor)
-        
-        tickLabels.transition(this.transition)
-            .attr('x', 0) 
-            .attr('y',  d => d.scaledValue)
-            .text(d => this.formatter(d.value))
-            .style('fill', this.settings.waterfallSettings.fontColor)
-          
+            .style('stroke', d => {
+                if (this.settings.waterfallSettings.axesEnabled) {
+                    return this.settings.waterfallSettings.lineColor
+                }
+            })
+         
         yAxis.exit().remove();
         ticks.exit().remove();
-        tickLabels.exit().remove();
-        
+
     }
   
 
@@ -373,7 +409,6 @@ export class Visual implements IVisual {
             bars.raise()
 
         bars.exit().remove();
-
     }
 
     private drawConnectors(barArray) {
@@ -645,6 +680,7 @@ export class Visual implements IVisual {
                         dataFontFamily: this.settings.waterfallSettings.dataFontFamily,
                         dataFontColor: this.settings.waterfallSettings.dataFontColor,
                         hideStart: this.settings.waterfallSettings.hideStart,
+                        axesEnabled: this.settings.waterfallSettings.axesEnabled,
                         gridlineColor: this.settings.waterfallSettings.gridlineColor,
                         gridlineWidth: this.settings.waterfallSettings.gridlineWidth,
                         displayUnit: this.settings.waterfallSettings.displayUnit,

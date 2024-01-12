@@ -183,7 +183,7 @@
                     }
                 },
                 "gridlineColor": {
-                    "displayName": "Line color",
+                    "displayName": "Gridline color",
                     "type": {
                         "fill": {
                             "solid": {
@@ -196,6 +196,12 @@
                     "displayName": "Gridline Width",
                     "type": {
                         "numeric": true
+                    }
+                },
+                "axesEnabled": {
+                    "displayName": "Axes",
+                    "type": {
+                        "bool": true
                     }
                 }
             }
