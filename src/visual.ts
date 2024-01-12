@@ -474,6 +474,8 @@ export class Visual implements IVisual {
             })
             .style('fill', this.settings.waterfallSettings.dataFontColor)
 
+        dataLabel.raise()
+
         dataLabel.exit().remove();     
     }
 
