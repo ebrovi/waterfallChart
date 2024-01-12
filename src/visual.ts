@@ -80,7 +80,7 @@ export class Visual implements IVisual {
 
     public update(options: VisualUpdateOptions) {
         this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
-        console.log('Visual update', options);
+        //console.log('Visual update', options);
         let colors = [
             this.settings.waterfallSettings.posBarColor, 
             this.settings.waterfallSettings.negBarColor, 
@@ -89,7 +89,7 @@ export class Visual implements IVisual {
         const hideStart = this.settings.waterfallSettings.hideStart
 
         this.data = transformData(options, colors, hideStart)
-        console.log("this.data", this.data)
+        //console.log("this.data", this.data)
         
         setStyle(this.settings)
         this.dim = [options.viewport.width, options.viewport.height]
@@ -280,12 +280,14 @@ export class Visual implements IVisual {
             .attr('y1', d => d.scaledValue)
             .attr('x2', this.scaleX.range()[1])
             .attr('y2', d => d.scaledValue)
+            .style('stroke-dasharray', '2,4')
         
         gridlines.transition(this.transition)
             .attr('x1', xMargin) // length of tick
             .attr('y1', d => d.scaledValue)
             .attr('x2', this.scaleX.range()[1])
             .attr('y2', d => d.scaledValue)
+            .style('stroke-dasharray', '2,4')
 
         gridlines.exit().remove();
     }
