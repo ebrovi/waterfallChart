@@ -58,7 +58,8 @@ interface YValue {
 interface barObject {
     startY: number,
     dir: number,
-    value: number
+    value: number,
+    type: number
 }
 
 export class Visual implements IVisual {
@@ -74,6 +75,7 @@ export class Visual implements IVisual {
     private baseline: number;
     private lines: number = 1;
     private formattingSettingsService: FormattingSettingsService;
+    private zoom: boolean
 
 
     constructor(options: VisualConstructorOptions) {
@@ -93,8 +95,9 @@ export class Visual implements IVisual {
             this.settings.waterfallSettings.sumBarColor];
         
         const hideStart = this.settings.waterfallSettings.hideStart
+        this.zoom = this.settings.waterfallSettings.zoomEnabled
 
-        this.data = transformData(options, colors, hideStart)
+        this.data = transformData(options, colors, hideStart, this.zoom)
         
         setStyle(this.settings)
         this.dim = [options.viewport.width, options.viewport.height]
@@ -123,9 +126,11 @@ export class Visual implements IVisual {
 
         this.transition = transition().duration(500).ease(easeLinear)
 
+        console.log(this.data)
         const barArray = this.getData()
         const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
         const ySteps = this.getYVal(yMin, yMax, stepSize)
+        console.log(ySteps)
 
     
         this.drawGrid(xMargin, ySteps)
@@ -167,7 +172,8 @@ export class Visual implements IVisual {
             barArray.push({
                 startY: startY,
                 dir: currentItem.value < 0 ? -1 : 1,
-                value: height
+                value: this.zoom === true ? ((currentItem.type === 2) ? Math.abs(this.scaleY(this.data.minValue) - this.scaleY(currentItem.value)) : height) : height,// tillfällig för att testa inzoomning
+                type: currentItem.type
             });
 
         }
@@ -187,9 +193,9 @@ export class Visual implements IVisual {
         xAxis.enter().append('line')
             .classed('x-axis', true)
             .attr('x1', sideMargin)
-            .attr('y1', this.scaleY(0))
+            .attr('y1', this.zoom === true ? this.scaleY(this.data.minValue) : this.scaleY(0))
             .attr('x2', this.scaleX.range()[1] )
-            .attr('y2', this.scaleY(0))
+            .attr('y2', this.zoom === true ? this.scaleY(this.data.minValue) : this.scaleY(0))
             .style('stroke', d => {
                 if (this.settings.waterfallSettings.axesEnabled) {
                     return this.settings.waterfallSettings.lineColor
@@ -199,9 +205,9 @@ export class Visual implements IVisual {
 
         xAxis.transition(this.transition)
             .attr('x1', sideMargin)
-            .attr('y1', this.scaleY(0))
+            .attr('y1', this.zoom === true ? this.scaleY(this.data.minValue) : this.scaleY(0))
             .attr('x2', this.scaleX.range()[1] )
-            .attr('y2', this.scaleY(0))
+            .attr('y2', this.zoom === true ? this.scaleY(this.data.minValue) : this.scaleY(0))
             .style('stroke', d => {
                 if (this.settings.waterfallSettings.axesEnabled) {
                     return this.settings.waterfallSettings.lineColor
@@ -250,8 +256,10 @@ export class Visual implements IVisual {
         const stepSize = Math.max(positiveStep, negativeStep);
     
         // new min max based on largest stepsize
-        const yMin = Math.floor(minValue / stepSize) * stepSize;
+        //const yMin = Math.floor(minValue / stepSize) * stepSize;
+        const yMin = Math.ceil(minValue / stepSize) * stepSize;
         const yMax = Math.ceil(maxValue / stepSize) * stepSize;
+        console.log("ymin", yMin)
     
         return { yMin, yMax, stepSize };
     }
@@ -280,7 +288,7 @@ export class Visual implements IVisual {
         gridlines.enter().append('line')
             .classed('gridline', true)
             .attr('x1', xMargin) // length of tick
-            .attr('y1', d => d.scaledValue)
+            .attr('y1', d =>  d.scaledValue)
             .attr('x2', this.scaleX.range()[1])
             .attr('y2', d => d.scaledValue)
             .style('stroke-dasharray', '2,4')
@@ -384,7 +392,7 @@ export class Visual implements IVisual {
             .attr('x', d => this.scaleX(d.category)-barWidth/2)
             .attr('y', (d, i) => barArray[i].startY)
             .attr('width', barWidth)
-            .attr('height', (d, i) => barArray[i].value )
+            .attr('height', (d, i) => barArray[i].value)
             .style('fill', d => {
                 if (this.settings.waterfallSettings.gradientEnabled) {
                     const gradientType = d.type < 0 ? 'neg' : (d.type === 2 ? 'sum' : 'pos');
@@ -686,10 +694,12 @@ export class Visual implements IVisual {
                         dataFontColor: this.settings.waterfallSettings.dataFontColor,
                         hideStart: this.settings.waterfallSettings.hideStart,
                         axesEnabled: this.settings.waterfallSettings.axesEnabled,
+                        zoomEnabled: this.settings.waterfallSettings.zoomEnabled,
                         gridlineColor: this.settings.waterfallSettings.gridlineColor,
                         gridlineWidth: this.settings.waterfallSettings.gridlineWidth,
                         displayUnit: this.settings.waterfallSettings.displayUnit,
                         decimals: this.settings.waterfallSettings.decimals,
+                       
                     },
                     selector: null
                 })

@@ -24,7 +24,7 @@ export interface VDataItem {
     color: string
 }
 
-export function transformData(options: VisualUpdateOptions, barColors: string[], hideStart: boolean): VData { // 3 dif colors
+export function transformData(options: VisualUpdateOptions, barColors: string[], hideStart: boolean, zoom: boolean): VData { // 3 dif colors
     let data: VData;
 
     try {
@@ -81,7 +81,7 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
 
         data = {
             items,
-            minValue,
+            minValue: zoom === true? maxValue/3 : minValue,
             maxValue,
             total,
             grouping,

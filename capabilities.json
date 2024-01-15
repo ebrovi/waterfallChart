@@ -203,6 +203,12 @@
                     "type": {
                         "bool": true
                     }
+                },
+                "zoomEnabled": {
+                    "displayName": "Zoom",
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         }

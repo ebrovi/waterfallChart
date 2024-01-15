@@ -56,5 +56,6 @@ export class VisualSettings extends DataViewObjectsParser {
       public decimals: number = 2;
       public displayUnit: string = "None"
       public axesEnabled: boolean = false;
+      public zoomEnabled: boolean = false;
      }
 
