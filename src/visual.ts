@@ -98,6 +98,7 @@ export class Visual implements IVisual {
         this.zoom = this.settings.waterfallSettings.zoomEnabled
 
         this.data = transformData(options, colors, hideStart, this.zoom)
+        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
         
         setStyle(this.settings)
         this.dim = [options.viewport.width, options.viewport.height]
@@ -128,7 +129,7 @@ export class Visual implements IVisual {
 
         console.log(this.data)
         const barArray = this.getData()
-        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
+        
         const ySteps = this.getYVal(yMin, yMax, stepSize)
         console.log(ySteps)
 
@@ -238,26 +239,32 @@ export class Visual implements IVisual {
     
     private getMinMaxSteps(minValue, maxValue) {
         const positiveRange = maxValue > 0 ? maxValue : 0;
-        const negativeRange = minValue < 0 ? Math.abs(minValue) : 0;
+        const negativeRange = minValue < 0 ? Math.abs(minValue) : minValue;
 
         const dif = Math.abs(maxValue - minValue)
+        console.log("dif",dif)
         const posPerc = (maxValue+0.01)/dif // +0.01 if maxValue = 0
         const negProc = (minValue+0.01)/dif
+        console.log("perc", posPerc, negProc)
 
 
         const posSteps = Math.ceil(posPerc*10)
         const negSteps = Math.ceil(10-posPerc*10+0.01)
         const negStepss = Math.ceil(negProc*10)
 
+        console.log("posStep", posSteps, "negSteps", negStepss)
+
     
         const positiveStep = this.calculateRoundingFactor(positiveRange, posSteps );
         const negativeStep = this.calculateRoundingFactor(negativeRange, negStepss);
 
         const stepSize = Math.max(positiveStep, negativeStep);
+        console.log("stepsize", stepSize)
     
         // new min max based on largest stepsize
         //const yMin = Math.floor(minValue / stepSize) * stepSize;
         const yMin = Math.ceil(minValue / stepSize) * stepSize;
+        this.data.minValue = yMin
         const yMax = Math.ceil(maxValue / stepSize) * stepSize;
         console.log("ymin", yMin)
     
