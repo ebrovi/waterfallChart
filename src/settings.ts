@@ -54,7 +54,7 @@ export class VisualSettings extends DataViewObjectsParser {
       public gridlineColor: string = "#333333";
       public gridlineWidth: number = 0.5;
       public decimals: number = 2;
-      public displayUnit: string = "Auto"
+      public displayUnit: string = "None"
       public axesEnabled: boolean = false;
      }
 

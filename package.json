@@ -16,7 +16,9 @@
     "@types/d3": "^7.4.1",
     "d3": "7.8.5",
     "powerbi-visuals-api": "~5.7.0",
+    "powerbi-visuals-utils-chartutils": "^6.0.1",
     "powerbi-visuals-utils-dataviewutils": "^6.0.1",
+    "powerbi-visuals-utils-formattingmodel": "^6.0.1",
     "powerbi-visuals-utils-formattingutils": "^6.0.1"
   },
   "devDependencies": {

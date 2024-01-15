@@ -38,6 +38,7 @@ import DataView = powerbi.DataView;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 import {valueFormatter, textMeasurementService} from "powerbi-visuals-utils-formattingutils";
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
+import { axis } from "powerbi-visuals-utils-chartutils";
 import measureSvgTextWidth = textMeasurementService.measureSvgTextWidth;
 
 import { Selection, select, selectAll, BaseType} from "d3-selection";
@@ -86,7 +87,6 @@ export class Visual implements IVisual {
 
     public update(options: VisualUpdateOptions) {
         this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
-        //console.log('Visual update', options);
         let colors = [
             this.settings.waterfallSettings.posBarColor, 
             this.settings.waterfallSettings.negBarColor, 
@@ -95,13 +95,11 @@ export class Visual implements IVisual {
         const hideStart = this.settings.waterfallSettings.hideStart
 
         this.data = transformData(options, colors, hideStart)
-        //console.log("this.data", this.data)
         
         setStyle(this.settings)
         this.dim = [options.viewport.width, options.viewport.height]
         this.svg.attr('width', this.dim[0])   
         this.svg.attr('height', this.dim[1])
-
 
         const maxLen = this.getTextWidth(this.formatter(this.data.maxValue)) * 1.2
         const minLen = this.getTextWidth(this.formatter(this.data.minValue)) * 1.2
@@ -116,26 +114,28 @@ export class Visual implements IVisual {
         const xLen = Math.abs(this.scaleX.range()[1]-xMargin)
         this.lines = this.getLines(xLen)
 
-        this.baseline = this.dim[1] - (this.settings.waterfallSettings.fontSize*this.lines) -this.settings.waterfallSettings.lineWidth    // ----------------------- FÖRBÄTTRA -----------------------------------
+        this.baseline = this.dim[1] - (this.settings.waterfallSettings.fontSize*this.lines) - this.settings.waterfallSettings.lineWidth     // ----------------------- FÖRBÄTTRA -----------------------------------
 
         this.scaleY = scaleLinear()
-            .domain([this.data.minValue, this.data.maxValue + this.settings.waterfallSettings.fontSize])
-            .range([this.baseline - this.settings.waterfallSettings.dataFontSize*2.5, this.settings.waterfallSettings.fontSize + this.settings.waterfallSettings.dataFontSize*2.5]) // so bars dont go over categories
+            .domain([this.data.minValue, this.data.maxValue])
+            .range([this.baseline - (this.settings.waterfallSettings.dataFontSize*2.5), this.settings.waterfallSettings.fontSize + (this.settings.waterfallSettings.dataFontSize*2.5)]) // so bars dont go over categories
+
 
         this.transition = transition().duration(500).ease(easeLinear)
 
         const barArray = this.getData()
         const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
-        const yValues = this.getYVal(yMin, yMax, stepSize)
+        const ySteps = this.getYVal(yMin, yMax, stepSize)
+
     
-        this.drawGrid(xMargin, yValues)
-        this.drawYLabels(yValues)
+        this.drawGrid(xMargin, ySteps)
+        this.drawYLabels(ySteps)
         this.defGradients(colors) 
         this.drawCategoryLabels(xLen)
         this.drawConnectors(barArray)
         this.drawDataLabel(barArray)
         this.drawBars(barArray)      
-        this.drawYAxis(xMargin, yValues) 
+        this.drawYAxis(xMargin, ySteps, yMax) 
         this.drawXAxis(xMargin)
     }
 
@@ -174,7 +174,7 @@ export class Visual implements IVisual {
         return barArray
     }
 
-    private getLines(xLen) {
+    private getLines(xLen) { //counts number of lines for the category labels, changing the bottom y-margin/baseline
         const maxWidth = xLen / this.data.items.length;
         const numLines = this.data.items.map(item => this.breakLine(item.category, maxWidth).num);
         return (Math.max(...numLines));
@@ -182,6 +182,7 @@ export class Visual implements IVisual {
 
     private drawXAxis(sideMargin) {
         const xAxis = this.svg.selectAll('line.x-axis').data([0]) // Binding a single-element array
+        
           
         xAxis.enter().append('line')
             .classed('x-axis', true)
@@ -234,14 +235,17 @@ export class Visual implements IVisual {
         const negativeRange = minValue < 0 ? Math.abs(minValue) : 0;
 
         const dif = Math.abs(maxValue - minValue)
-
         const posPerc = (maxValue+0.01)/dif // +0.01 if maxValue = 0
+        const negProc = (minValue+0.01)/dif
+
 
         const posSteps = Math.ceil(posPerc*10)
         const negSteps = Math.ceil(10-posPerc*10+0.01)
+        const negStepss = Math.ceil(negProc*10)
+
     
         const positiveStep = this.calculateRoundingFactor(positiveRange, posSteps );
-        const negativeStep = this.calculateRoundingFactor(negativeRange, negSteps);
+        const negativeStep = this.calculateRoundingFactor(negativeRange, negStepss);
 
         const stepSize = Math.max(positiveStep, negativeStep);
     
@@ -309,14 +313,14 @@ export class Visual implements IVisual {
         yLabels.exit().remove();
     }
 
-    private drawYAxis( xMargin, yValues: YValue[]) {
+    private drawYAxis( xMargin, yValues: YValue[], yMax) {
         const yAxis = this.svg.selectAll('line.y-axis').data([0]); 
         // ---------------------------------- Y-AXIS -----------------------------------------
     
         yAxis.enter().append('line')
             .classed('y-axis', true)
             .attr('x1', xMargin)
-            .attr('y1', this.settings.waterfallSettings.fontSize)
+            .attr('y1', this.scaleY(yMax))
             .attr('x2', xMargin)
             .attr('y2', this.baseline)
             .style('stroke', d => {
@@ -327,7 +331,7 @@ export class Visual implements IVisual {
         
         yAxis.transition(this.transition)
             .attr('x1', xMargin)
-            .attr('y1', this.settings.waterfallSettings.fontSize)
+            .attr('y1', this.scaleY(yMax))
             .attr('x2', xMargin)
             .attr('y2', this.baseline)
             .style('stroke', d => {
@@ -483,9 +487,7 @@ export class Visual implements IVisual {
      private drawCategoryLabels(xLen){
 
         const catLabels = this.svg.selectAll('text.category-label').data(this.data.items)
-
         const maxWidth = xLen/this.data.items.length
-
         const numLines = []
     
         catLabels.enter().append('text')
