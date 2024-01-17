@@ -32,6 +32,8 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
         let minValue = 0;
         let maxValue = 0;
         let total = 0;
+        let localMin = [];
+        let localTot = []
         
         const items: VDataItem[] = [];
         const grouping: VDataItem[] = [];
@@ -55,8 +57,9 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
 
                     total += value;
 
+
                     if (skip > 0) {    // om hideStart är true så kommer inte första värdena att pushas
-                        
+                      
                         items.push({
                             category: <string>dv.categories[0].values[u],
                             value: <number>value,
@@ -64,8 +67,16 @@ export function transformData(options: VisualUpdateOptions, barColors: string[],
                             color: color
                         })
                     }  
+
+                    localMin.push({minValue})
+                    console.log("min",localMin)
+                    localTot.push(total)
+                    console.log("tot",localTot)
                 }
             }
+
+           
+         
             minValue = Math.min(minValue, total)
             maxValue = Math.max(maxValue, total)
 

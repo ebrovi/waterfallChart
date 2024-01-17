@@ -98,7 +98,7 @@ export class Visual implements IVisual {
         this.zoom = this.settings.waterfallSettings.zoomEnabled
 
         this.data = transformData(options, colors, hideStart, this.zoom)
-        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
+        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue) // updaterar this.data.minValue om zoom = true
         
         setStyle(this.settings)
         this.dim = [options.viewport.width, options.viewport.height]
@@ -222,6 +222,7 @@ export class Visual implements IVisual {
     private calculateRoundingFactor(range, numSteps) {
         // här beräknas vad storleken på varje steg 
         const stepSize = range / numSteps;
+        console.log("stepsize",stepSize)
         const magnitude = Math.pow(10, Math.floor(Math.log10(stepSize)));
         const normalizedStepSize = stepSize / magnitude; // Normalize step size to between 1 and 10
         let roundedStepSize;
@@ -244,8 +245,9 @@ export class Visual implements IVisual {
         const dif = Math.abs(maxValue - minValue)
         console.log("dif",dif)
         const posPerc = (maxValue+0.01)/dif // +0.01 if maxValue = 0
-        const negProc = (minValue+0.01)/dif
+        const negProc = (Math.abs(minValue+0.01))/dif
         console.log("perc", posPerc, negProc)
+        console.log("range", positiveRange, negativeRange)
 
 
         const posSteps = Math.ceil(posPerc*10)
@@ -256,14 +258,16 @@ export class Visual implements IVisual {
 
     
         const positiveStep = this.calculateRoundingFactor(positiveRange, posSteps );
-        const negativeStep = this.calculateRoundingFactor(negativeRange, negStepss);
+        const negativeStep = this.calculateRoundingFactor(negativeRange, negStepss );
+
+        console.log("posnegsteps",positiveStep, negativeStep)
 
         const stepSize = Math.max(positiveStep, negativeStep);
         console.log("stepsize", stepSize)
     
         // new min max based on largest stepsize
-        //const yMin = Math.floor(minValue / stepSize) * stepSize;
-        const yMin = Math.ceil(minValue / stepSize) * stepSize;
+        const yMin = Math.floor(minValue / stepSize) * stepSize;
+        //const yMin = Math.ceil(minValue / stepSize) * stepSize;
         this.data.minValue = yMin
         const yMax = Math.ceil(maxValue / stepSize) * stepSize;
         console.log("ymin", yMin)
