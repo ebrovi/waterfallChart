@@ -38,7 +38,6 @@ import DataView = powerbi.DataView;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 import {valueFormatter, textMeasurementService} from "powerbi-visuals-utils-formattingutils";
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
-import { axis } from "powerbi-visuals-utils-chartutils";
 import measureSvgTextWidth = textMeasurementService.measureSvgTextWidth;
 
 import { Selection, select, selectAll, BaseType} from "d3-selection";
@@ -48,7 +47,6 @@ import { transition, Transition} from "d3-transition"
 import { easeLinear } from "d3-ease"
 import { setStyle } from "./setStyle"
 import { ScalePoint, scalePoint, ScaleLinear, scaleLinear} from "d3-scale";
-import { dataViewWildcard } from "powerbi-visuals-utils-dataviewutils";
 
 interface YValue {
     value: number;
@@ -58,7 +56,8 @@ interface YValue {
 interface barObject {
     startY: number,
     dir: number,
-    value: number
+    value: number,
+    type: number
 }
 
 export class Visual implements IVisual {
@@ -95,6 +94,7 @@ export class Visual implements IVisual {
         const hideStart = this.settings.waterfallSettings.hideStart
 
         this.data = transformData(options, colors, hideStart)
+        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue) // updaterar this.data.minValue om zoom = true
         
         setStyle(this.settings)
         this.dim = [options.viewport.width, options.viewport.height]
@@ -124,7 +124,6 @@ export class Visual implements IVisual {
         this.transition = transition().duration(500).ease(easeLinear)
 
         const barArray = this.getData()
-        const {yMin, yMax, stepSize} = this.getMinMaxSteps(this.data.minValue, this.data.maxValue)
         const ySteps = this.getYVal(yMin, yMax, stepSize)
 
     
@@ -167,7 +166,8 @@ export class Visual implements IVisual {
             barArray.push({
                 startY: startY,
                 dir: currentItem.value < 0 ? -1 : 1,
-                value: height
+                value: height,
+                type: currentItem.type
             });
 
         }
@@ -232,27 +232,27 @@ export class Visual implements IVisual {
     
     private getMinMaxSteps(minValue, maxValue) {
         const positiveRange = maxValue > 0 ? maxValue : 0;
-        const negativeRange = minValue < 0 ? Math.abs(minValue) : 0;
+        const negativeRange = minValue < 0 ? Math.abs(minValue) : minValue;
 
         const dif = Math.abs(maxValue - minValue)
         const posPerc = (maxValue+0.01)/dif // +0.01 if maxValue = 0
-        const negProc = (minValue+0.01)/dif
-
+        const negProc = (Math.abs(minValue+0.01))/dif
 
         const posSteps = Math.ceil(posPerc*10)
         const negSteps = Math.ceil(10-posPerc*10+0.01)
         const negStepss = Math.ceil(negProc*10)
-
     
         const positiveStep = this.calculateRoundingFactor(positiveRange, posSteps );
-        const negativeStep = this.calculateRoundingFactor(negativeRange, negStepss);
+        const negativeStep = this.calculateRoundingFactor(negativeRange, negStepss );
+
 
         const stepSize = Math.max(positiveStep, negativeStep);
     
         // new min max based on largest stepsize
         const yMin = Math.floor(minValue / stepSize) * stepSize;
+        //const yMin = Math.ceil(minValue / stepSize) * stepSize;
+        this.data.minValue = yMin
         const yMax = Math.ceil(maxValue / stepSize) * stepSize;
-    
         return { yMin, yMax, stepSize };
     }
 
@@ -280,7 +280,7 @@ export class Visual implements IVisual {
         gridlines.enter().append('line')
             .classed('gridline', true)
             .attr('x1', xMargin) // length of tick
-            .attr('y1', d => d.scaledValue)
+            .attr('y1', d =>  d.scaledValue)
             .attr('x2', this.scaleX.range()[1])
             .attr('y2', d => d.scaledValue)
             .style('stroke-dasharray', '2,4')
@@ -384,7 +384,7 @@ export class Visual implements IVisual {
             .attr('x', d => this.scaleX(d.category)-barWidth/2)
             .attr('y', (d, i) => barArray[i].startY)
             .attr('width', barWidth)
-            .attr('height', (d, i) => barArray[i].value )
+            .attr('height', (d, i) => barArray[i].value)
             .style('fill', d => {
                 if (this.settings.waterfallSettings.gradientEnabled) {
                     const gradientType = d.type < 0 ? 'neg' : (d.type === 2 ? 'sum' : 'pos');
@@ -690,6 +690,7 @@ export class Visual implements IVisual {
                         gridlineWidth: this.settings.waterfallSettings.gridlineWidth,
                         displayUnit: this.settings.waterfallSettings.displayUnit,
                         decimals: this.settings.waterfallSettings.decimals,
+                       
                     },
                     selector: null
                 })
