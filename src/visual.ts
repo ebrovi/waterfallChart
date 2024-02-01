@@ -239,11 +239,10 @@ export class Visual implements IVisual {
         const negProc = (Math.abs(minValue+0.01))/dif
 
         const posSteps = Math.ceil(posPerc*10)
-        const negSteps = Math.ceil(10-posPerc*10+0.01)
-        const negStepss = Math.ceil(negProc*10)
+        const negSteps = Math.ceil(negProc*10)
     
         const positiveStep = this.calculateRoundingFactor(positiveRange, posSteps );
-        const negativeStep = this.calculateRoundingFactor(negativeRange, negStepss );
+        const negativeStep = this.calculateRoundingFactor(negativeRange, negSteps );
 
 
         const stepSize = Math.max(positiveStep, negativeStep);
@@ -387,6 +386,7 @@ export class Visual implements IVisual {
             .attr('height', (d, i) => barArray[i].value)
             .style('fill', d => {
                 if (this.settings.waterfallSettings.gradientEnabled) {
+
                     const gradientType = d.type < 0 ? 'neg' : (d.type === 2 ? 'sum' : 'pos');
                     return `url(#${gradientType}-gradient)`;
                 }
@@ -571,18 +571,22 @@ export class Visual implements IVisual {
             const lighterColor = this.lightenColor(barColor, 25);
     
             let gradient = this.svg.select(`#${gradientId}`);
-            if (gradient.empty()) {
-                gradient = this.svg.append("defs")
-                    .append("linearGradient")
-                    .attr("id", gradientId)
-                    .attr("x1", "0%") 
-                    .attr("y1", "0%")
-                    .attr("x2", "100%") 
-                    .attr("y2", "100%");
-    
-                gradient.append("stop").attr("offset", "30%").attr("stop-color", barColor);
-                gradient.append("stop").attr("offset", "100%").attr("stop-color", lighterColor);
+
+            if (!gradient.empty()) {
+                gradient.remove();
             }
+
+            gradient = this.svg.append("defs")
+                .append("linearGradient")
+                .attr("id", gradientId)
+                .attr("x1", "0%") 
+                .attr("y1", "0%")
+                .attr("x2", "100%") 
+                .attr("y2", "100%");
+
+            gradient.append("stop").attr("offset", "30%").attr("stop-color", barColor);
+            gradient.append("stop").attr("offset", "100%").attr("stop-color", lighterColor);
+
         })
         
     }
